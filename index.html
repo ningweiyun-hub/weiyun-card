@@ -2107,13 +2107,20 @@ function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
         padding: '0 clamp(16px, 4vw, 40px)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
-        <span
+        <div
           onClick={onWordmark}
           style={{
-            fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 'clamp(15px, 3.4vw, 21px)',
-            letterSpacing: '0.03em', color: 'var(--neve-ink-navy)', opacity: 0.92,
-            lineHeight: 1, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-          }}>Wei-Yun Neve Ning</span>
+            display: 'flex', alignItems: 'center', gap: 10,
+            cursor: 'pointer', flexShrink: 0,
+          }}>
+          <img src="images/neve-icon-light.svg" alt="NEVE" width="34" height="34"
+            style={{ display: 'block', width: 34, height: 34 }} />
+          <span style={{
+            fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 'clamp(17px, 3.4vw, 22px)',
+            letterSpacing: '0.12em', color: 'var(--neve-ink-navy)', opacity: 0.92,
+            lineHeight: 1, whiteSpace: 'nowrap',
+          }}>NEVE</span>
+        </div>
 
         <nav style={{ display: 'flex', alignItems: 'center' }}>
           <button
