@@ -1,0 +1,22 @@
+/* NEVE — Motion tokens
+   Calm, never bouncy. One easing curve does almost everything. */
+
+:root {
+  --duration-fast: 120ms;   /* @kind other */
+  --duration-normal: 180ms; /* @kind other */
+  --duration-slow: 240ms;   /* @kind other */
+
+  /* The NEVE curve: quick to leave, gentle to settle. */
+  --ease-calm: cubic-bezier(0.2, 0, 0, 1); /* @kind other */
+
+  --transition-base: all var(--duration-normal) var(--ease-calm);
+  --transition-fast: all var(--duration-fast) var(--ease-calm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;   /* @kind other */
+    --duration-normal: 0ms; /* @kind other */
+    --duration-slow: 0ms;   /* @kind other */
+  }
+}

@@ -1,0 +1,72 @@
+/* NEVE — Color tokens
+   Calm, editorial palette. Base values first, semantic aliases below. */
+
+:root {
+  /* ---- Primary ---- */
+  --neve-ink-navy: #0F172A;   /* Primary text, navigation, high-emphasis actions */
+  --neve-dust-blue: #4C6B8A;  /* Secondary actions, calm highlights, charts */
+  --neve-moss-green: #6B7F6B; /* Stable, supportive, completed states */
+  --neve-warm-ivory: #F7F5F2; /* Main background and editorial surfaces */
+  --neve-stone-grey: #E5E7EB; /* Borders, dividers, disabled states */
+
+  /* ---- Accent ---- */
+  --neve-muted-amber: #F2C48D;    /* Gentle attention and warnings */
+  --neve-clay-orange: #E07A5F;    /* Important alerts and warm emphasis */
+  --neve-soft-lavender: #B8B4D8;  /* AI, insight, guidance */
+
+  /* ---- Semantic hues ---- */
+  --neve-success: #2E7D5B;
+  --neve-warning: #E6B450;
+  --neve-error: #D87373;
+  --neve-info: #4C86BA;
+
+  /* ---- Neutral ramp (derived, for shadows/overlays/subtle fills) ---- */
+  --neve-ivory-deep: #EFEBE5;  /* hover on ivory surfaces */
+  --neve-ink-700: #1E293B;
+  --neve-ink-500: #475569;
+  --neve-ink-400: #64748B;
+  --neve-ink-300: #94A3B8;
+  --neve-white: #FFFFFF;
+
+  /* ============ Semantic aliases ============ */
+
+  /* Surfaces */
+  --surface-page: var(--neve-warm-ivory);
+  --surface-card: var(--neve-white);
+  --surface-raised: var(--neve-white);
+  --surface-sunken: var(--neve-ivory-deep);
+  --surface-inverse: var(--neve-ink-navy);
+  --surface-hover: var(--neve-ivory-deep);
+
+  /* Text */
+  --text-primary: var(--neve-ink-navy);
+  --text-secondary: var(--neve-ink-500);
+  --text-muted: var(--neve-ink-400);
+  --text-inverse: var(--neve-white);
+  --text-link: var(--neve-dust-blue);
+  --text-on-accent: var(--neve-ink-navy);
+
+  /* Borders & lines */
+  --border-default: var(--neve-stone-grey);
+  --border-strong: var(--neve-ink-300);
+  --border-focus: var(--neve-dust-blue);
+
+  /* Brand action colors */
+  --action-primary: var(--neve-ink-navy);
+  --action-primary-hover: var(--neve-ink-700);
+  --action-secondary: var(--neve-dust-blue);
+  --action-secondary-hover: #3F5B76;
+  --action-accent: var(--neve-clay-orange);
+
+  /* Feedback fills (tints for banners/badges) */
+  --feedback-success-fg: var(--neve-success);
+  --feedback-success-bg: #E6F0EA;
+  --feedback-warning-fg: #9A6B12;
+  --feedback-warning-bg: #FBF0D9;
+  --feedback-error-fg: #B14A4A;
+  --feedback-error-bg: #F7E4E4;
+  --feedback-info-fg: var(--neve-info);
+  --feedback-info-bg: #E2EDF5;
+  --feedback-ai-fg: #5B567E;
+  --feedback-ai-bg: #EEEDF6;
+}

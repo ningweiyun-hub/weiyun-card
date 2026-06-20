@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" fill="none">
+  <rect x="2" y="2" width="508" height="508" rx="128" fill="#F7F5F2" stroke="#E5E7EB" stroke-width="4"></rect>
+  <g transform="translate(36.00,36.00) scale(18.333)">
+    <path d="M2 12h20 M12 2v20 M20 16l-4-4 4-4 M4 8l4 4-4 4 M16 4l-4 4-4-4 M8 20l4-4 4 4" stroke="#E5E7EB" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+  <text x="256" y="332" text-anchor="middle" font-family="&#39;Playfair Display&#39;, Georgia, serif" font-weight="700" font-size="236" fill="#0F172A">N<tspan font-size="104" dy="-116" fill="#4C6B8A">2</tspan></text>
+</svg>

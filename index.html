@@ -1,0 +1,2275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wei-Yun Neve Ning — come in</title>
+<!-- Brand icon: N² snowflake mark (NEVE). SVG favicon for modern browsers,
+     PNG fallbacks for older browsers and iOS home-screen. -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png" />
+<link rel="stylesheet" href="src/neve/tokens/fonts.css" />
+<link rel="stylesheet" href="src/neve/tokens/colors.css" />
+<link rel="stylesheet" href="src/neve/tokens/typography.css" />
+<link rel="stylesheet" href="src/neve/tokens/spacing.css" />
+<link rel="stylesheet" href="src/neve/tokens/elevation.css" />
+<link rel="stylesheet" href="src/neve/tokens/motion.css" />
+<style>
+/* Ported from the prototype's inline <style> in "My card.html". */
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font-family: var(--font-body);
+  background: var(--neve-warm-ivory);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+#root { position: fixed; inset: 0; }
+
+@keyframes nevePulse {
+  0%, 100% { opacity: 0.4; transform: scale(0.85); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+@keyframes neveRise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.neve-rise { animation: neveRise 520ms var(--ease-calm) both; }
+
+.neve-navbtn {
+  flex: 0 0 auto;
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--surface-card);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-1);
+  color: var(--neve-ink-navy);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+.neve-navbtn:hover { box-shadow: var(--shadow-2); background: var(--surface-hover); }
+.neve-navbtn:active { transform: scale(0.94); }
+
+[data-rolecard]::-webkit-scrollbar { display: none; }
+div::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .neve-rise { animation: none; }
+  .nevePulse { animation: none; }
+}
+
+/* Top-nav: inline links on desktop; collapse into a dropdown menu on mobile. */
+.nav-links { display: flex; align-items: center; gap: clamp(10px, 2.4vw, 24px); }
+.nav-burger { display: none; }
+
+@media (max-width: 600px) {
+  .nav-burger { display: flex; align-items: center; justify-content: center; }
+  .nav-links {
+    position: absolute; top: 54px; right: clamp(16px, 4vw, 40px);
+    flex-direction: column; align-items: stretch; gap: 2px;
+    min-width: 180px; padding: 8px;
+    background: var(--surface-card);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2);
+    display: none;
+  }
+  .nav-links.open { display: flex; }
+  .nav-links > button { width: 100%; text-align: left; padding: 11px 12px !important; border-radius: var(--radius-sm); }
+  .nav-links > button:hover { background: var(--surface-hover); }
+  .nav-links > a { justify-content: center; margin-top: 6px; }
+  /* The deck's prev/next arrows eat too much width on a phone, squeezing the
+     card so it gets clipped. Hide them — the deck is swipeable by touch. */
+  .deck-arrow { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<script src="src/neve/ds_bundle.js"></script>
+<script src="src/published.js"></script>
+<script type="text/babel" data-presets="react">
+/* Content data — projects per identity, with tags and blog-style write-ups.
+
+   Field notes:
+   - `project` (optional) shows above the case title (the product/engagement name).
+   - `intro` and each section `p` may contain blank-line-separated paragraphs and
+     bullet lines beginning with "• " — the blog renderer handles both.
+   - AI Builder and Knitwear cases below are still placeholder copy awaiting real content. */
+
+/* CV download — drop the PDF at ~/weiyun-card/Weiyun_CV.pdf (and public/ for Vite).
+   The nav "CV" button links here. Until the file exists the link 404s. */
+const CV_URL = 'Weiyun_CV.pdf';
+
+/* ---- Content store (localStorage-backed) ----
+   The site renders from a localStorage override when present, otherwise from
+   the bundled defaults below. (Public build — no editing panel is included.) */
+const ADMIN_PASSWORD = '';
+const CONTENT_KEY = 'weiyun_content_v1';
+
+const loadStore = () => {
+  try {
+    if (typeof localStorage === 'undefined') return {};
+    const raw = localStorage.getItem(CONTENT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) { return {}; }
+};
+const saveStore = (store) => {
+  try { localStorage.setItem(CONTENT_KEY, JSON.stringify(store)); } catch (e) { /* quota / private mode */ }
+};
+// Published content (window.__PUBLISHED__, from src/published.js) is what every
+// visitor sees once the admin exports. It sits between the per-browser draft and
+// the bundled defaults.
+const PUBLISHED = (typeof window !== 'undefined' && window.__PUBLISHED__) || null;
+// Effective content: localStorage draft → published → bundled default.
+const effectiveRoleProjects = (store) =>
+  (store && store.roleProjects) || (PUBLISHED && PUBLISHED.roleProjects) || ROLE_PROJECTS;
+const effectiveBlog = (store) =>
+  (store && store.blog) || (PUBLISHED && PUBLISHED.blog) || DEFAULT_BLOG;
+// Public visibility: anything not explicitly unpublished is shown.
+const isPublished = (item) => !!item && item.published !== false;
+// Cover image source: an uploaded image is stored as a base64 data URL (admin
+// upload, persisted in localStorage); a bundled image is just a filename in
+// the images/ folder. Returns '' when there's no cover.
+const coverSrc = (cover) => (!cover ? '' : (cover.startsWith('data:') ? cover : `images/${cover}`));
+
+/* ---- Questionnaire ("How did you find me?") ----
+   The single source of truth for the options, used by the welcome questionnaire
+   AND the admin stats so labels always match. Each submission is appended to
+   localStorage as { id, ts }. NOTE: this is device-local — the admin only ever
+   sees responses made in this same browser (no shared backend). */
+const SURVEY_KEY = 'weiyun_survey_v1';
+const SURVEY_OPTIONS = [
+  { id: 'friend', label: 'A friend told me' },
+  { id: 'work', label: 'Through work — a colleague or client' },
+  { id: 'linkedin', label: 'LinkedIn' },
+  { id: 'search', label: 'Found it searching' },
+  { id: 'else', label: 'Somewhere else entirely' },
+];
+const loadSurvey = () => {
+  try {
+    if (typeof localStorage === 'undefined') return [];
+    const raw = localStorage.getItem(SURVEY_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+};
+const logSurvey = (id) => {
+  try {
+    const arr = loadSurvey();
+    arr.push({ id, ts: Date.now() });
+    localStorage.setItem(SURVEY_KEY, JSON.stringify(arr));
+  } catch (e) { /* quota / private mode */ }
+};
+const clearSurvey = () => {
+  try { localStorage.removeItem(SURVEY_KEY); } catch (e) { /* ignore */ }
+};
+
+/* About-me page content. Fill this in from ABOUT_TEMPLATE.md.
+   `intro` and each section `p` support blank-line paragraphs and "• " bullets. */
+const ABOUT = {
+  eyebrow: 'About me',
+  name: 'Wei-Yun Neve Ning',
+  // small line shown under the name; set to null to hide
+  aka: 'If you want, you can call me Neve.',
+  // optional portrait image filename placed in images/ (e.g. 'weiyun.jpg'); null = no photo
+  portrait: 'weiyun-about.jpg',
+  // Social links rendered as small icon buttons beside the portrait.
+  socials: [
+    { type: 'linkedin', label: 'LinkedIn', href: 'https://www.linkedin.com/in/weiyun-ning/' },
+    { type: 'email', label: 'Email', href: 'mailto:ningweiyun@gmail.com' },
+    { type: 'instagram', label: 'Instagram', href: 'https://www.instagram.com/cord.n.yarn' },
+  ],
+  // Intro paragraphs. Wrap key phrases in ==double equals== to highlight them.
+  intro: [
+    `I'm a ==Senior Product Designer== with ==7+ years== of experience designing digital products, end-to-end user experiences, and ==scalable design systems==.`,
+    `My work focuses on turning complex workflows into clear, intuitive, and structured product experiences, especially in ==EdTech, e-learning, B2B platforms==, and operational systems. I bring together ==UX strategy, interaction design, systems thinking==, and strong visual execution to create products that are not only usable, but ==built to scale==.`,
+    `I work fluently in ==Figma==, from components, variables, Auto Layout, and prototyping to design systems and design tokens. I also integrate AI tools such as ==Claude Code and Cursor== into my workflow to accelerate prototyping, validation, and product delivery.`,
+    `Beyond product design, I'm actively exploring the intersection of ==art, AI, and code==, using emerging tools to rethink how digital experiences are imagined, built, and expressed.`,
+  ],
+};
+
+/* Footer contact details. Two groups: personal, and the knitting studio.
+   `type` drives the icon + how the value is linked (email→mailto, phone→tel,
+   link→external, text→plain). Edit values here; the footer renders them. */
+const CONTACT = {
+  personal: {
+    heading: 'Get in touch',
+    items: [
+      { type: 'email', label: 'ningweiyun@gmail.com', value: 'ningweiyun@gmail.com' },
+      { type: 'linkedin', label: 'LinkedIn', value: 'https://www.linkedin.com/in/weiyun-ning/' },
+      { type: 'phone', label: '+31 638276409', value: '+31638276409' },
+      { type: 'text', label: 'Netherlands', value: 'Netherlands' },
+    ],
+  },
+  studio: {
+    heading: 'Cord n Yarn — knitting studio',
+    note: 'Welcome to join a workshop in Amsterdam and Rotterdam.',
+    items: [
+      { type: 'instagram', label: '@cord.n.yarn', value: 'https://www.instagram.com/cord.n.yarn' },
+      { type: 'email', label: 'w.knitting.n@gmail.com', value: 'w.knitting.n@gmail.com' },
+    ],
+  },
+};
+
+/* Shared case — belongs to both Product designer and UX (appears in both decks). */
+const OHYOUNG_CASE = {
+  id: 'ohyoung-b2b-crm',
+  title: 'What Are the User Needs?',
+  project: 'Ohyoung B2B & CRM Systems',
+  year: '2024–2025',
+  duo: ['#1E293B', '#4C6B8A'],
+  tags: ['Business Strategy', 'User Research', 'User Flow', '0→1 Product'],
+  summary: 'I designed a 0-to-1 B2B CRM framework that transformed fragmented manual processes into a flexible, scalable workflow for multiple language schools.',
+  blog: {
+    intro: `In this 0-to-1 B2B CRM project, the main challenge was not simply improving an existing tool, but defining a new operational workflow from scratch. Internal teams were relying on fragmented manual processes that had never been formalized, while each language school had its own way of managing registration, scheduling, and student information. Through user interviews, observational research, and cross-functional workshops, I mapped these analog pain points and identified the need for a flexible standard: a centralized framework strong enough to maintain data consistency, but adaptable enough to support different school operations. This helped shift the project from basic digitization toward a scalable CRM ecosystem built around efficiency, role clarity, and long-term growth.`,
+    sections: [
+      { h: 'Building a B2B Ecosystem from 0 to 1', p: `Creating a system from scratch is more than just digitizing paperwork; it's about defining a new way of working. In the early stages of this B2B CRM, the "user need" wasn't just a better tool — it was a coherent workflow where none existed.` },
+      { h: 'Defining the Problem: Architecting a New Reality', p: `In a 0-1 project, the biggest challenge is the lack of a baseline. Internal users were struggling with fragmented, manual processes that had never been formalized. The goal wasn't just to fix a "broken" system, but to invent one.
+
+• The Mission: To design a centralized registration framework that replaced labor-intensive manual entries.
+• The Metric: We set a benchmark to improve operational efficiency by at least 10% from day one of the rollout.` },
+      { h: 'User Research: Mapping the Unseen', p: `When there is no existing system to audit, you have to observe the people. I conducted multiple rounds of interviews and observational studies across diverse language schools to understand their "analog" pain points.
+
+• The Strategic Discovery: I identified a critical tension — each school had its own unique "operational DNA."
+• The Insight: To succeed at 0-1, the system couldn't be a "one-size-fits-all" cage. It needed to be a flexible standard: a core framework robust enough for data integrity, but modular enough to adapt to local school cultures.` },
+      { h: 'Ideation: Turning Chaos into Structure', p: `With no legacy system to hold us back, the ideation phase was about structural innovation. I led workshops to brainstorm how we could eliminate redundant manual steps before they even reached the digital interface.
+
+Our focus shifted to three pillars of 0-1 design:
+• Zero Redundancy: Designing data entry points that follow a "write once, use everywhere" philosophy.
+• Role Clarity: Establishing clear digital ownership to replace the "who-does-what" confusion of manual workflows.
+• Future-Proofing: Creating a seamless user experience that could scale as the organization grew.` },
+      // Placeholders from the content draft ("Photo – Before / Photo – After").
+      // src is null → they don't render publicly until you upload an image in the admin.
+      { type: 'image', src: null, caption: 'Before' },
+      { type: 'image', src: null, caption: 'After' },
+    ],
+    quote: null,
+  },
+};
+
+const ROLE_PROJECTS = {
+  product: [
+    {
+      id: 'lean-design-system',
+      title: 'Creating a lean design system',
+      project: 'YesOnline E-Learning System',
+      year: '2023–2025',
+      duo: ['#0F172A', '#4C6B8A'],
+      tags: ['Design system', 'UI Design', 'Teamwork'],
+      summary: 'I translated user insights and business goals into a consistent, data-informed product experience.',
+      blog: {
+        intro: `In this project, I worked as a UX/UI Designer, focusing on aligning design consistency with broader business goals. Through an end-to-end design process, including user interviews, usability testing, and A/B testing, I transformed research findings into practical design decisions. This approach helped ensure that the final experience was not only visually cohesive, but also grounded in real user needs and measurable product value.
+
+I restructured the original design system, streamlining convoluted settings and establishing clear definitions. I also worked closely with the engineering team to align on implementation and compliance.`,
+        sections: [
+          { h: 'The Challenges: Former System', p: `The previous design system relied on three distinct sets of assets for different devices. This fragmented approach caused confusion, as even the color specifications became inconsistent between the mobile and web versions, making it difficult to maintain brand unity.` },
+          { h: 'Confusion for Developers', p: `While attempting to accelerate the development process, we discovered that the fragmented button components caused significant visual inconsistencies in the frontend. I had to invest considerable time auditing existing styles while ensuring new designs remained backward-compatible — all while managing the high-pressure timeline set by leadership and engineering.` },
+          { h: 'Buttons, buttons, and more buttons', p: `Following a period of cross-functional alignment, I successfully overhauled the system into a leaner version. I kicked off this initiative by standardizing the button library, ensuring that the most frequently used elements were the first to benefit from the new, simplified architecture.` },
+          { h: 'Next step: Keeping Design-to-Code Alignment Seamless', p: `After revamping the design system, the development velocity has significantly increased, allowing engineers to build interfaces more efficiently. On the design side, this standardized framework enables me to produce high-fidelity prototypes much faster, ensuring that we can iterate and validate ideas with minimal overhead.
+
+To ensure the system remains maintainable and scalable, we introduced Storybook as our single source of truth. This prevents the creation of "redundant variants" — such as "twin buttons" with slight, unauthorized differences. By implementing Storybook, we've achieved a seamless alignment between design and code, allowing both teams to develop and test components in isolation while maintaining total visual integrity.` },
+        ],
+        quote: null,
+      },
+    },
+    {
+      id: 'why-design-system-matters',
+      title: 'Why Does a Design System Matter?',
+      year: '2024–2025',
+      duo: ['#1E293B', '#6B7F6B'],
+      tags: ['Design System', 'UI Design', 'System Thinking'],
+      summary: '',
+      blog: {
+        intro: '',
+        sections: [
+          { h: 'Scaling a B2B Ecosystem from the Ground Up', p: `In a 0-1 project, the UI designer's role isn't just to "draw screens" — it's to define the DNA of the product. To ensure the new CRM could handle the weight of complex registration workflows while staying agile, I established a set of Core Design Principles to guide every pixel.` },
+          { h: 'Establishing Design Principles: Our North Star', p: `Before opening Figma, I defined three pillars to ensure the system remained cohesive as it grew from zero to one:
+
+• Clarity Over Decoration: In a high-intensity work environment, every element must serve a purpose. We prioritize data readability over trendy aesthetics.
+• Consistency Breeds Efficiency: Predictable patterns reduce the learning curve. If a "Submit" button looks a certain way in Registration, it must look the same in Reporting.
+• Forgiving Design: Human error is inevitable in manual data entry. Our system must provide clear feedback and "undo" paths to prevent costly mistakes.` },
+          { h: 'The Atomic Foundation: Building for Scale', p: `To hit our 10% efficiency goal, I adopted the Atomic Design methodology. I moved away from "page-based" design toward a "component-based" ecosystem.
+
+• The Atoms: I standardized typography scales, a B2B-optimized color palette (prioritizing high contrast and reduced eye strain), and a strict 8px grid system.
+• The Library: By building a centralized Figma component library, we ensured that developers could reuse code, drastically reducing the "Time-to-Market" for new features.` },
+        ],
+        quote: null,
+      },
+    },
+    OHYOUNG_CASE,
+  ],
+
+  ux: [
+    {
+      id: 'redefining-users-workflows',
+      title: 'Redefining Users and Workflows',
+      project: 'YesOnline E-Learning System',
+      year: '2023–2025',
+      duo: ['#4C6B8A', '#B8B4D8'],
+      tags: ['User Flow', 'User Research', 'User Interviews'],
+      summary: 'I redefined the product’s user structure from two basic roles into a five-role ecosystem, transforming the platform from a simple E-learning tool into a hybrid E-learning and CRM system.',
+      blog: {
+        intro: `The legacy product had completed its first development phase, but users still struggled to use it in real academic workflows. Through stakeholder interviews, requirement grooming, and cross-functional discussions, I identified a major alignment gap: different departments had different understandings of who the product served and what it was meant to achieve. By mapping the actual needs of students, instructors, administrative staff, academic coordinators, and sales representatives, I redefined the system around five distinct user roles. This shifted the product direction from a basic class-booking platform into a more strategic hybrid system that connected E-learning operations with CRM-driven student support.`,
+        sections: [
+          { h: 'How many users are there, really?', p: `The primary pain point of the legacy product was that, despite completing the first phase of development, users were still unable to use it "normally." The workflows didn't align with their actual needs; specifically, the course selection logic was incompatible with existing academic processes, making it unusable for students.
+
+Initially, the team identified only two user roles: internal staff and students. The product was narrowly defined as a simple E-learning system where students booked classes and staff managed orders and schedules.` },
+          { h: 'User Research & Product Evolution', p: `Through stakeholder interviews and requirement grooming with the marketing team, I discovered a significant "alignment gap" — every department had a different understanding of the product's core purpose.
+
+Following deep-dive research and cross-functional discussions, I redefined the system to support five distinct user roles for the Phase 1 launch. This shifted the product's identity from a basic E-learning tool to a sophisticated hybrid system combining E-learning and CRM (Customer Relationship Management).` },
+          { h: 'User Personas', p: `External Users
+• Instructors: A diverse group of international teachers requiring multi-language support (English, Japanese, German, French, etc.). They rely on the system to prepare materials, track student progress, manage leave requests, and set their teaching availability.
+• Students: A broad demographic including university students, working professionals, and parents. Their goals are to schedule, skip, or cancel classes, track their learning history, and monitor their proficiency levels.
+Internal Staff
+• Administrative Staff: They act as a support bridge, assisting with manual course bookings and handling emergency leave for both teachers and students. They require tools for batch scheduling to maximize efficiency.
+• Academic Coordinators: Responsible for teacher management, focusing on reviewing and auditing instructor schedules and workloads.
+• Sales Representatives: Focused on student success and retention; they need access to their specific assigned students to monitor learning progress and provide personalized care.` },
+        ],
+        quote: null,
+      },
+    },
+    {
+      id: 'bi-dashboard',
+      title: 'Making Business Goals Visible Through Data',
+      project: 'Internal Business Intelligence Dashboard',
+      year: '2025',
+      duo: ['#4C6B8A', '#6B7F6B'],
+      tags: ['UX Strategy', 'Data Visualization', 'Internal Tools', 'Design Leadership'],
+      summary: 'I led the UX strategy and design launch of an internal business intelligence dashboard, transforming fragmented operational data into a clear decision-making tool for internal teams.',
+      blog: {
+        intro: `This project was an internal monitoring system designed to help business teams understand performance, track key metrics, and make faster decisions through data visualization. Before the dashboard, important business information was scattered across different sources, making it difficult for teams to see the full picture or connect daily operations with larger business goals. As the Senior UX Designer and Design Lead, I was responsible for shaping the product structure, defining the dashboard logic, guiding the visual hierarchy, and leading the design toward launch. My focus was to turn complex data into an intuitive experience that helped users not only read numbers, but understand what required attention, comparison, or action.`,
+        sections: [
+          { h: 'Translating Business Goals into Dashboard Logic', p: `The main UX challenge was not simply deciding how to display data, but determining what the data needed to communicate. I worked from the business goals backward, identifying which metrics mattered most, how different teams would interpret them, and what decisions the dashboard needed to support. This helped transform the product from a large data board into a structured monitoring experience, where users could quickly understand performance status, identify changes, and recognize which areas needed follow-up.` },
+          { h: 'Designing for Clarity, Priority, and Action', p: `Because the dashboard contained a large amount of information, I focused on reducing cognitive load through clear information hierarchy, visual grouping, and progressive levels of detail. High-level indicators were designed for quick scanning, trend visualizations helped users identify changes over time, and detailed data sections supported deeper investigation when needed. The goal was to make the dashboard feel less like a data archive and more like a decision-support system that guided users from overview to insight.` },
+          { h: 'Leading the Product Toward Launch', p: `As the Design Lead, I guided the product from UX structure to final launch, ensuring that the dashboard remained consistent, scalable, and aligned with business priorities. My role included defining the user flow, shaping the visual language of the data views, reviewing design consistency, and supporting cross-functional communication during implementation. This project strengthened my ability to lead internal tool design at the intersection of business strategy, operational complexity, and data-driven decision-making.` },
+        ],
+        quote: null,
+      },
+    },
+    OHYOUNG_CASE,
+  ],
+
+  ai: [
+    {
+      id: 'workshop-management-system',
+      title: 'My first AI Project, manage my own business',
+      project: 'Workshop Management System',
+      year: '2025',
+      duo: ['#0F172A', '#B8B4D8'],
+      tags: ['AI-build', 'ERP', 'Management System'],
+      summary: 'A workshop management tool designed for Cord n Yarn to centralize craft workshop planning, client records, budgets, templates, and client communication.',
+      link: 'https://ningweiyun-hub.github.io/workshop-manager/workshop-manager.html',
+      linkNote: 'Password: linen-clay-spool-amber-94',
+      blog: {
+        intro: `Workshop Manager is a self-initiated internal tool I built for Cord n Yarn, my craft workshop brand, to support the operational side of running small creative workshops. Instead of managing workshop details across scattered notes, spreadsheets, and repeated messages, the tool brings key workflows into one place: upcoming sessions, preparation tasks, client records, budgets, reusable material lists, and email templates. The goal was to turn a small handmade business workflow into a clearer, more scalable system, reducing manual effort while keeping the process personal and flexible.`,
+        sections: [
+          { h: 'From Handmade Workshops to Operational Systems', p: `As the number of workshop ideas, participants, materials, and preparation tasks grew, I noticed that the challenge was no longer just designing the workshop experience itself. It was also about managing the behind-the-scenes operations: who joined which session, what materials were needed, what tasks were still pending, and how to communicate with clients consistently. This project started from that practical need: to create a lightweight system that could support creative work without making the process feel overcomplicated.` },
+          { h: 'Designing Around Real Small-Business Workflows', p: `The system is structured around the core workflows of running craft workshops. The dashboard gives a quick overview of upcoming workshops and preparation tasks. The workshop section helps plan and track each session, while the client section keeps participant information organized. Budget tracking supports income and expense management, and reusable templates help reduce repetitive setup work for materials, checklists, and client emails. Rather than building isolated features, I designed the tool as a connected workflow that reflects how a small workshop business actually operates.` },
+          { h: 'Outcome and Next Steps', p: `The current version transforms a personal operational pain point into a functional management system for workshop planning. It helps reduce scattered information, repeated manual work, and the mental load of preparing each session from scratch. For the next stage, I would like to improve automation around task reminders, client follow-ups, and budget summaries, while exploring how AI could help generate workshop checklists, material plans, and personalized email drafts based on each session type.` },
+        ],
+        quote: null,
+      },
+    },
+    {
+      id: 'food-spinner',
+      title: 'Random idea from life',
+      project: 'Food Spinner',
+      year: '2026',
+      duo: ['#B8B4D8', '#E07A5F'],
+      tags: ['AI-build', 'Management system', 'Fun idea'],
+      summary: 'A personal food decision tool that combines a meal spinner, pantry tracking, and recipe management to reduce food waste and everyday meal-planning friction.',
+      link: 'https://ningweiyun-hub.github.io/ns-food-spinner/',
+      blog: {
+        intro: `Meal Spinner started as a personal tool to solve two everyday problems: spending too much time deciding what to eat, and accidentally wasting food I had forgotten in the fridge or cupboard. By combining random meal generation with pantry and recipe management, the project explores how a playful interaction can support more practical food planning habits.`,
+        sections: [
+          { h: 'Why I made this?', p: `I built Meal Spinner to solve a small but recurring problem in my daily life: I often spent too much time thinking about what to eat, while also forgetting ingredients I already had at home. This led to unnecessary food waste and decision fatigue around simple everyday meals.
+
+Instead of creating another static meal planner, I wanted to design something lighter and more playful. The idea was to turn meal planning into a quick interaction: set a meal preference, spin for an idea, then connect that decision back to what is actually available in the fridge or cupboard.` },
+          { h: 'From fun story to user needs', p: `The project started from a fun personal observation: sometimes the hardest part of cooking is not the cooking itself, but deciding what to make. Behind that small moment, I identified a more practical user need: people need a simple way to connect food inspiration with household inventory.
+
+That insight shaped the product into three connected parts: a meal spinner for quick decision-making, a pantry tracker for managing fridge and cupboard items, and a recipe collection for storing meal ideas. Together, these features help users move from "What should I eat?" to "What can I make with what I already have?"` },
+          { h: 'Outcome and next steps', p: `The current prototype turns a personal pain point into a lightweight food management experience. It reduces the mental load of meal decisions while encouraging users to make better use of ingredients before they expire.
+
+For the next stage, I would like to improve the connection between pantry items and recipe suggestions, so the spinner can prioritize meals based on available ingredients and expiry dates. I would also explore smarter reminders, ingredient matching, and more personalized meal logic to make the experience feel less random and more context-aware.` },
+        ],
+        quote: null,
+      },
+    },
+    {
+      id: 'small-talk-boxes',
+      title: 'Make language practice easier.',
+      project: 'Small Talk Boxes',
+      year: '2026',
+      duo: ['#4C6B8A', '#B8B4D8'],
+      tags: ['Fun idea', 'Learning Platform', 'Mock Interview'],
+      summary: 'An English small talk practice tool that helps users build speaking confidence through themed prompts, timed responses, and low-pressure daily practice.',
+      link: 'https://ningweiyun-hub.github.io/small-talk-practice/',
+      blog: {
+        intro: `English Small Talk Practice is a self-initiated learning tool designed to help users practise spontaneous English speaking in a simple and structured way. Instead of preparing perfect answers in advance, users can choose a theme, draw a random question, and speak within a timed session. The goal is to make speaking practice feel less intimidating by turning it into a repeatable, lightweight exercise that supports everyday conversation, interview preparation, and confidence building.`,
+        sections: [
+          { h: 'Turning Speaking Anxiety into a Small Daily Exercise', p: `The project started from a common language-learning problem: many learners understand English, but struggle to respond naturally in real conversations. Small talk can feel especially difficult because it requires quick thinking, personal expression, and a sense of timing. I designed this tool to reduce that pressure by breaking speaking practice into small, manageable sessions where users only need to focus on one question at a time.` },
+          { h: 'Designing for Spontaneity and Structure', p: `The experience is built around a simple interaction: pick a theme, draw a question, and speak for a set amount of time. The random prompt encourages spontaneous thinking, while the timer creates a clear practice boundary. This balance helps users practise speaking more naturally without feeling overwhelmed by an open-ended learning process.` },
+          { h: 'Outcome and Next Steps', p: `The current version turns English speaking practice into a lightweight and repeatable web-based tool that users can use for daily warm-ups, small talk training, or interview preparation. The next step is to develop it into a mobile app, making the practice experience more accessible in everyday moments such as commuting, waiting between tasks, or preparing before conversations. I would also explore features such as answer history, self-reflection notes, difficulty levels, push reminders, and AI-generated feedback to help users build a more consistent speaking habit over time.` },
+        ],
+        quote: null,
+      },
+    },
+  ],
+
+  knit: [
+    {
+      id: 'crochet-bag-collection',
+      title: 'Idea from My Daily Job',
+      year: '2026',
+      duo: ['#E07A5F', '#F2C48D'],
+      tags: ['Crochet', 'Bag Collection', 'Spring Style', 'Handmade Design'],
+      summary: 'A three-piece crochet bag collection developed through a design course, exploring how shared visual elements, material choices, and deadline constraints can shape a cohesive handmade series.',
+      blog: {
+        intro: `This project was the final outcome of a crochet design course, where the brief was to create a cohesive series of bags with at least two to three pieces connected by shared design elements. I designed a three-piece crochet bag collection, starting from sketches, material hunting, and timeline planning in late December. Although I originally planned to finish the project with "perfect" time management, the process quickly became a lesson in energy management, creative decision-making, and working within real constraints. In the end, the collection became more than a handmade assignment. It was a small but meaningful design project about structure, limitation, and knowing which ideas to keep when inspiration arrives at the last minute.`,
+        sections: [
+          { h: 'Designing a Collection, Not Just a Bag', p: `The goal of this project was to create a series rather than a single object. Each bag needed to stand on its own while still feeling connected to the others through shared design elements. I explored form, proportion, texture, and material combinations to build a visual language that could carry across three pieces. This pushed me to think like a product designer as well as a maker: not only asking whether one piece looked good, but whether the full collection felt intentional and cohesive.` },
+          { h: 'Time Management Became Energy Management', p: `I planned the project timeline carefully, with enough milestones to keep myself moving toward the final deadline. Under ideal conditions, I should have finished by early March. In reality, the biggest constraint was not time, but energy. I realized that while I might technically have four to eight hours in a day, my truly focused creative hours were closer to two to four. This changed how I approached the work. Instead of forcing productivity through time blocks, I learned to design around the energy window where real making and decision-making could happen.` },
+          { h: 'Choosing What to Keep Under Pressure', p: `In the final week before submission, new ideas started appearing quickly. I sketched several new directions, but crochet takes time, and not every idea could become a finished object. I had to make a clear design decision: narrow the concept down to what I could complete well, then strengthen the collection around those pieces. The final three-bag series was completed during a busy period of job searching, making the project feel like a deadline-fueled side quest. It reminded me that constraints do not always weaken creative work. Sometimes, they make the final direction sharper.` },
+        ],
+        quote: 'We do not run on time. We run on energy.',
+      },
+    },
+    {
+      id: 'handcraft-studio',
+      title: 'Beyond the Laptop: My Handcraft Studio',
+      year: '2026',
+      duo: ['#F2C48D', '#6B7F6B'],
+      tags: ['Handcraft', 'Workshop'],
+      summary: 'A personal handcraft studio project where I bring knitting, crochet, macramé, and workshop experiences together beyond my digital design work.',
+      blog: {
+        intro: `Beyond the Laptop is a personal handcraft studio project that explores another side of my identity as a designer. While my professional work often happens through screens, systems, and digital products, handcraft allows me to reconnect with materials, process, and physical making. Through knitting, crochet, macramé, and small creative workshops, I use this studio as a space to experiment with texture, teach creative skills, and build meaningful experiences through hands-on practice.`,
+        sections: [
+          { h: 'Making as a Way of Thinking', p: `Handcraft is not separate from my design practice. It is another way of solving problems, testing ideas, and understanding how people interact with materials. Through making, I pay attention to rhythm, structure, mistakes, repair, and patience. These details shape how I think as both a designer and a maker.` },
+          { h: 'Creating Workshops Around Slow Craft', p: `The studio also extends into workshop experiences, where I design not only the final object but the learning journey itself. From preparing materials to breaking down techniques into beginner-friendly steps, each workshop is designed to help participants feel comfortable, creative, and supported. The goal is to make handcraft approachable, even for people who have never tried it before.` },
+          { h: 'A Personal Studio Beyond Digital Work', p: `This project gives me a space to explore creativity beyond product design. It allows me to work with my hands, observe how people learn, and turn small creative practices into shared experiences. For me, the handcraft studio is not just a hobby, but an extension of my design identity: tactile, thoughtful, and deeply human.` },
+        ],
+        quote: 'Beyond the laptop, design becomes something I can hold, teach, and share.',
+      },
+    },
+  ],
+};
+
+/* Coming-soon identities (rendered as non-clickable cards after the deck). */
+const COMING_SOON = [
+  {
+    id: 'podcaster',
+    title: 'Podcaster',
+    eyebrow: 'Story sharing · personal experience',
+    duo: ['#1E293B', '#E07A5F'],
+    desc: 'I create story-driven audio content that reflects on personal experiences, cultural identity, and everyday observations.',
+  },
+  {
+    id: 'exhibition-strategy',
+    title: 'Exhibition Strategy Designer',
+    eyebrow: 'Exhibition strategy · B2B experience design',
+    duo: ['#4C6B8A', '#E8BA82'],
+    desc: 'I turn exhibitions into market entry opportunities — pairing business matchmaking with B2B experience design.',
+  },
+];
+
+/* ---- Blog ----
+   Free-form writing: side projects, experiments, notes. Same article shape as
+   the case studies (intro + sections + optional quote), plus `published` for
+   the admin publish toggle and `duo` for the card cover colour.
+   Edit these defaults here. */
+const DEFAULT_BLOG = [
+  {
+    id: 'building-with-ai',
+    title: 'Why I started building with AI',
+    year: '2026',
+    duo: ['#0F172A', '#B8B4D8'],
+    tags: ['Side project', 'Reflection'],
+    summary: 'A short note on how pairing with AI changed the kind of side projects I take on.',
+    published: true,
+    blog: {
+      intro: `This is your blog — a place for side projects, experiments, and notes that don't belong in a polished case study.
+
+Write freely here. The same formatting as the case studies works: leave a blank line between paragraphs, and start a line with "• " to make a bullet.`,
+      sections: [
+        { h: 'A small experiment', p: `Replace this with the story of something you made or learned recently — what you tried, what surprised you, what you'd do differently.` },
+      ],
+      quote: null,
+    },
+  },
+  {
+    id: 'notes-on-slow-craft',
+    title: 'Notes on slow craft',
+    year: '2025',
+    duo: ['#E07A5F', '#F2C48D'],
+    tags: ['Knitting', 'Process'],
+    summary: 'An unpublished example — flip its publish toggle in the admin to show how visibility works.',
+    published: false,
+    blog: {
+      intro: `This second post is left unpublished on purpose, so you can see how the admin publish toggle hides a draft from visitors while keeping it editable.`,
+      sections: [],
+      quote: null,
+    },
+  },
+];
+
+/* Production replacement for the prototype-only <image-slot> web component.
+   Click or drag-and-drop an image file to fill it; shows a calm placeholder
+   until filled. Object-fit: cover, rounded per the blog cover spec. */
+function ImageSlot({ placeholder = 'Add a cover image', radius = 14, aspectRatio = '16 / 9' }) {
+  const [src, setSrc] = React.useState(null);
+  const [over, setOver] = React.useState(false);
+  const inputRef = React.useRef(null);
+
+  function read(file) {
+    if (!file || !file.type.startsWith('image/')) return;
+    const r = new FileReader();
+    r.onload = () => setSrc(r.result);
+    r.readAsDataURL(file);
+  }
+
+  return (
+    <div
+      onClick={() => inputRef.current?.click()}
+      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => { e.preventDefault(); setOver(false); read(e.dataTransfer.files?.[0]); }}
+      style={{
+        width: '100%', aspectRatio, display: 'block', marginBottom: 40,
+        borderRadius: radius, overflow: 'hidden', cursor: 'pointer',
+        background: src ? 'transparent' : 'var(--surface-sunken)',
+        border: src ? '1px solid var(--border-default)'
+                    : `1px dashed ${over ? 'var(--neve-dust-blue)' : 'var(--border-strong)'}`,
+        transition: 'var(--transition-fast)',
+      }}>
+      {src ? (
+        <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+      ) : (
+        <div style={{
+          width: '100%', height: '100%', display: 'grid', placeItems: 'center',
+          fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-muted)',
+          textAlign: 'center', padding: 24,
+        }}>{placeholder}</div>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" hidden
+        onChange={(e) => read(e.target.files?.[0])} />
+    </div>
+  );
+}
+
+/* Welcome canvas — fusing colour blocks. Soft brand-coloured blobs drift across
+   the paper, bounce off the edges, and gently pull together when they overlap so
+   they read as merging, irregular blocks. Every second each blob gets a small
+   random impulse so the motion never settles. Clicking pushes the nearby blocks
+   outward. Palette is the NEVE design system. */
+
+function ParticleFigure({ onEnter }) {
+  const canvasRef = React.useRef(null);
+  const [revealed, setRevealed] = React.useState(false);
+  const [armed, setArmed] = React.useState(false);
+  const blobsRef = React.useRef([]);
+  const clickRef = React.useRef(null);
+
+  const { Button } = window.NEVEDesignSystem_bf520b || {};
+
+  // NEVE palette (rgb triplets), weighted warm + calm; ink used sparingly for depth.
+  const PALETTE = [
+    '76,107,138',   // dust-blue
+    '184,180,216',  // soft-lavender
+    '224,122,95',   // clay-orange
+    '242,196,141',  // muted-amber
+    '107,127,107',  // moss-green
+    '30,41,59',     // ink-700 (depth)
+  ];
+
+  function handleClick(e) {
+    const c = canvasRef.current;
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    clickRef.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    let raf, W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // soft round sprite per colour — solid-ish core, transparent edge → blocks
+    // that visually fuse where they overlap.
+    const spriteCache = {};
+    function sprite(rgb) {
+      if (spriteCache[rgb]) return spriteCache[rgb];
+      const s = document.createElement('canvas');
+      s.width = s.height = 256;
+      const g = s.getContext('2d');
+      const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
+      grad.addColorStop(0, `rgba(${rgb},0.92)`);
+      grad.addColorStop(0.55, `rgba(${rgb},0.80)`);
+      grad.addColorStop(0.82, `rgba(${rgb},0.36)`);
+      grad.addColorStop(1, `rgba(${rgb},0)`);
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 256, 256);
+      spriteCache[rgb] = s;
+      return s;
+    }
+
+    function build() {
+      W = canvas.clientWidth; H = canvas.clientHeight;
+      canvas.width = W * dpr; canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const base = Math.min(W, H);
+      if (blobsRef.current.length === 0) {
+        const N = 6;
+        blobsRef.current = Array.from({ length: N }, (_, i) => {
+          const a = Math.random() * Math.PI * 2;
+          const speed = base * 0.00016 * (0.5 + Math.random());
+          return {
+            x: 0.16 * W + Math.random() * 0.68 * W,
+            y: 0.16 * H + Math.random() * 0.68 * H,
+            vx: Math.cos(a) * speed,
+            vy: Math.sin(a) * speed,
+            r: base * (0.14 + Math.random() * 0.09),
+            rgb: PALETTE[i % PALETTE.length],
+            // irregular shape: a few offset sub-lobes that wobble
+            lobes: Array.from({ length: 3 }, () => ({
+              ang: Math.random() * Math.PI * 2,
+              dist: Math.random() * 0.42,
+              sc: 0.55 + Math.random() * 0.42,
+              wob: Math.random() * Math.PI * 2,
+            })),
+          };
+        });
+      }
+    }
+
+    let last = performance.now(), kickAcc = 0;
+    function step(now) {
+      const dt = Math.min(40, now - last); last = now;
+      const base = Math.min(W, H);
+      const blobs = blobsRef.current;
+
+      // ~every second: a small random impulse to keep things lively
+      kickAcc += dt;
+      if (kickAcc > 1000) {
+        kickAcc = 0;
+        for (const b of blobs) {
+          const a = Math.random() * Math.PI * 2;
+          const k = base * 0.00010 * (0.4 + Math.random());
+          b.vx += Math.cos(a) * k; b.vy += Math.sin(a) * k;
+        }
+      }
+
+      // click → push nearby blocks outward
+      if (clickRef.current) {
+        const { x, y } = clickRef.current; clickRef.current = null;
+        for (const b of blobs) {
+          const dx = b.x - x, dy = b.y - y, d = Math.hypot(dx, dy) || 1;
+          const f = Math.max(0, 1 - d / (base * 0.7)) * base * 0.013;
+          b.vx += (dx / d) * f; b.vy += (dy / d) * f;
+        }
+      }
+
+      // pairwise: when blocks overlap, a gentle nudge so they meet and fuse
+      for (let i = 0; i < blobs.length; i++) {
+        for (let j = i + 1; j < blobs.length; j++) {
+          const a = blobs[i], b = blobs[j];
+          const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
+          const min = (a.r + b.r) * 0.6;
+          if (d < min) {
+            const nx = dx / d, ny = dy / d, push = (min - d) * 0.0035;
+            a.vx -= nx * push; a.vy -= ny * push;
+            b.vx += nx * push; b.vy += ny * push;
+          }
+        }
+      }
+
+      const damp = 0.99;
+      const minSp = base * 0.00006;
+      for (const b of blobs) {
+        b.x += b.vx * dt; b.y += b.vy * dt;
+        b.vx *= damp; b.vy *= damp;
+        const m = b.r * 0.45;
+        if (b.x < m) { b.x = m; b.vx = Math.abs(b.vx); }
+        if (b.x > W - m) { b.x = W - m; b.vx = -Math.abs(b.vx); }
+        if (b.y < m) { b.y = m; b.vy = Math.abs(b.vy); }
+        if (b.y > H - m) { b.y = H - m; b.vy = -Math.abs(b.vy); }
+        // never fully freeze
+        if (Math.hypot(b.vx, b.vy) < minSp) {
+          const a = Math.random() * Math.PI * 2;
+          b.vx += Math.cos(a) * minSp; b.vy += Math.sin(a) * minSp;
+        }
+      }
+    }
+
+    function draw(now) {
+      ctx.clearRect(0, 0, W, H);
+      const blobs = blobsRef.current;
+      ctx.globalCompositeOperation = 'source-over';
+      for (const b of blobs) {
+        const img = sprite(b.rgb);
+        ctx.globalAlpha = 0.5;
+        for (const lo of b.lobes) {
+          const wob = 1 + Math.sin(now * 0.0006 + lo.wob) * 0.12;
+          const rad = Math.max(8, b.r * lo.sc * wob);
+          const ox = Math.cos(lo.ang) * lo.dist * b.r;
+          const oy = Math.sin(lo.ang) * lo.dist * b.r;
+          ctx.drawImage(img, b.x + ox - rad, b.y + oy - rad, rad * 2, rad * 2);
+        }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    // Driver: rAF plus a stall-detector for throttled/offscreen iframes.
+    let stop = false, lastTick = performance.now();
+    function rafLoop(now) {
+      if (stop) return;
+      lastTick = performance.now();
+      if (!reduce) step(now);
+      draw(now);
+      raf = requestAnimationFrame(rafLoop);
+    }
+    build();
+    raf = requestAnimationFrame(rafLoop);
+    const stallGuard = setInterval(() => {
+      if (stop) return;
+      if (performance.now() - lastTick > 120) {
+        lastTick = performance.now();
+        const n = performance.now();
+        if (!reduce) step(n);
+        draw(n);
+      }
+    }, 33);
+    const tReveal = setTimeout(() => setRevealed(true), reduce ? 200 : 1100);
+    const tArm = setTimeout(() => setArmed(true), reduce ? 400 : 1700);
+    const onResize = () => build();
+    window.addEventListener('resize', onResize);
+    return () => {
+      stop = true;
+      cancelAnimationFrame(raf);
+      clearInterval(stallGuard);
+      clearTimeout(tReveal);
+      clearTimeout(tArm);
+      window.removeEventListener('resize', onResize);
+    };
+  }, []);
+
+  return (
+    <div
+      onClick={handleClick}
+      style={{
+        position: 'absolute', inset: 0, overflow: 'hidden',
+        background: 'radial-gradient(120% 90% at 50% 18%, #FBFAF8 0%, var(--neve-warm-ivory) 60%, #EFEBE5 100%)',
+      }}
+    >
+      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+
+      <div style={{
+        position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        textAlign: 'center', pointerEvents: 'none', padding: '0 24px',
+        opacity: revealed ? 1 : 0,
+        transition: 'opacity 900ms var(--ease-calm)',
+      }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)', textShadow: '0 1px 16px rgba(247,245,242,0.95)' }}>This is a person, not a homepage</div>
+        <h1 style={{
+          margin: 0, fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(40px, 7vw, 76px)', lineHeight: 1.04,
+          letterSpacing: '-0.01em', color: 'var(--neve-ink-navy)', textWrap: 'pretty',
+          textShadow: '0 2px 22px rgba(247,245,242,0.92)',
+        }}>Welcome to Wei-Yun Neve Ning's space</h1>
+        <div style={{
+          fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-muted)',
+          textShadow: '0 1px 16px rgba(247,245,242,0.95)',
+        }}>Click anywhere — nudge the colours.</div>
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            marginTop: 12, pointerEvents: armed ? 'auto' : 'none',
+            opacity: armed ? 1 : 0, transition: 'opacity 600ms var(--ease-calm)',
+          }}
+        >
+          {Button ? <Button variant="primary" size="lg" onClick={onEnter}>Come in</Button> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* RolePage — projects under one identity, filterable by tag.
+   BlogPost — blog-style case study for a single project. */
+
+function PageShell({ label, children }) {
+  return (
+    <div data-screen-label={label} className="neve-rise" style={{
+      position: 'absolute', inset: 0, overflowY: 'auto',
+      background: 'radial-gradient(120% 90% at 50% 0%, #FBFAF8 0%, var(--neve-warm-ivory) 70%)',
+    }}>
+      {children}
+      <Footer />
+    </div>
+  );
+}
+
+/* Icon for a contact item, keyed by `type`. 18px line icon, inherits color. */
+function ContactIcon({ type }) {
+  const common = { width: 17, height: 17, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round', style: { flexShrink: 0 } };
+  if (type === 'email') return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg>;
+  if (type === 'phone') return <svg {...common}><path d="M5 4h4l2 5-3 2a12 12 0 0 0 5 5l2-3 5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2Z" /></svg>;
+  if (type === 'link') return <svg {...common}><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.5 1.5" /><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.5-1.5" /></svg>;
+  if (type === 'linkedin') return <svg {...common}><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4V9h4v1.2A6 6 0 0 1 16 8Z" /><rect x="2" y="9" width="4" height="12" rx="1" /><circle cx="4" cy="4" r="2" /></svg>;
+  if (type === 'instagram') return <svg {...common}><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="16.6" cy="7.4" r="1.1" fill="currentColor" stroke="none" /></svg>;
+  return <svg {...common}><path d="M12 21s7-5.5 7-11a7 7 0 0 0-14 0c0 5.5 7 11 7 11Z" /><circle cx="12" cy="10" r="2.5" /></svg>; // text/location → pin
+}
+
+/* One contact row: icon + label, linked per type (mailto / tel / external / plain). */
+function ContactRow({ item }) {
+  const external = item.type === 'link' || item.type === 'instagram' || item.type === 'linkedin';
+  const href = item.type === 'email' ? `mailto:${item.value}`
+    : item.type === 'phone' ? `tel:${item.value}`
+    : external ? item.value : null;
+  const inner = (
+    <>
+      <ContactIcon type={item.type} />
+      <span>{item.label}</span>
+    </>
+  );
+  const base = {
+    display: 'inline-flex', alignItems: 'center', gap: 9,
+    fontFamily: 'var(--font-body)', fontSize: 14.5, lineHeight: 1.5,
+    color: 'var(--text-secondary)', textDecoration: 'none',
+  };
+  if (!href) return <div style={{ ...base, color: 'var(--text-muted)' }}>{inner}</div>;
+  return (
+    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}
+      style={{ ...base, transition: 'var(--transition-fast)' }}
+      onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--neve-ink-navy)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}>
+      {inner}
+    </a>
+  );
+}
+
+/* Footer — consolidated contact methods, shown at the bottom of every content page. */
+function Footer() {
+  const cols = [CONTACT.personal, CONTACT.studio];
+  return (
+    <footer style={{
+      borderTop: '1px solid var(--border-default)',
+      background: 'rgba(247,245,242,0.5)',
+      padding: 'clamp(40px, 6vw, 64px) clamp(20px, 5vw, 48px)',
+    }}>
+      <div style={{
+        maxWidth: 1080, margin: '0 auto',
+        display: 'grid', gap: 'clamp(28px, 5vw, 64px)',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+      }}>
+        {cols.map((col) => (
+          <div key={col.heading}>
+            <h3 style={{
+              margin: '0 0 16px', fontFamily: 'var(--font-display)', fontWeight: 400,
+              fontSize: 18, lineHeight: 1.2, color: 'var(--neve-ink-navy)',
+            }}>{col.heading}</h3>
+            {col.note ? (
+              <p style={{
+                margin: '0 0 16px', maxWidth: 320, fontFamily: 'var(--font-body)',
+                fontSize: 13.5, lineHeight: 1.55, color: 'var(--neve-dust-blue)', textWrap: 'pretty',
+              }}>{col.note}</p>
+            ) : null}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {col.items.map((item, i) => <ContactRow key={i} item={item} />)}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{
+        maxWidth: 1080, margin: 'clamp(32px, 5vw, 48px) auto 0', paddingTop: 20,
+        borderTop: '1px solid var(--border-default)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap',
+        fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)',
+      }}>
+        <span>© {new Date().getFullYear()} Wei-Yun Neve Ning</span>
+      </div>
+    </footer>
+  );
+}
+
+/* A prominent button linking out to a live project. Shows the URL as a button
+   (never the raw address); an optional `note` (e.g. a password) pops on hover. */
+function ProjectLinkButton({ href, note }) {
+  const [hover, setHover] = React.useState(false);
+  return (
+    <div style={{ position: 'relative', display: 'inline-block', margin: '0 0 30px' }}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <a href={href} target="_blank" rel="noopener noreferrer" style={{
+        display: 'inline-flex', alignItems: 'center', gap: 9,
+        fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500, lineHeight: 1,
+        textDecoration: 'none', color: 'var(--neve-warm-ivory)',
+        background: 'var(--neve-ink-navy)', border: '1px solid var(--neve-ink-navy)',
+        padding: '13px 22px', borderRadius: 'var(--radius-full)',
+        boxShadow: hover ? 'var(--shadow-2)' : 'var(--shadow-1)',
+        transition: 'var(--transition-fast)',
+      }}>
+        Visit the live project
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 17 17 7M9 7h8v8" />
+        </svg>
+      </a>
+      {note && hover ? (
+        <div role="tooltip" style={{
+          position: 'absolute', bottom: 'calc(100% + 8px)', left: 0, whiteSpace: 'nowrap',
+          padding: '8px 12px', borderRadius: 'var(--radius-sm)',
+          background: 'var(--neve-ink-navy)', color: 'var(--neve-warm-ivory)',
+          fontFamily: 'var(--font-body)', fontSize: 13, boxShadow: 'var(--shadow-2)',
+        }}>{note}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function BackLink({ label, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'inline-flex', alignItems: 'center', gap: 8,
+      background: 'none', border: 'none', padding: '6px 0', cursor: 'pointer',
+      fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-muted)',
+      transition: 'var(--transition-fast)',
+    }}
+    onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--neve-ink-navy)'; }}
+    onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'scaleX(-1)' }}>
+        <path d="M5 12h14M13 6l6 6-6 6" />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+/* Renders a text block: blank-line-separated paragraphs, plus consecutive
+   lines starting with "• " grouped into a bullet list. */
+function RichText({ text, size, lineHeight, marginBottom = 16 }) {
+  const lines = String(text).split('\n');
+  const blocks = [];
+  let para = [], bullets = [];
+  const flushPara = () => { if (para.length) { blocks.push({ type: 'p', text: para.join(' ') }); para = []; } };
+  const flushBullets = () => { if (bullets.length) { blocks.push({ type: 'ul', items: bullets.slice() }); bullets = []; } };
+  for (const raw of lines) {
+    const line = raw.replace(/\t/g, ' ').trim();
+    if (!line) { flushPara(); flushBullets(); continue; }
+    const m = line.match(/^[••]\s*(.*)$/);
+    if (m) { flushPara(); bullets.push(m[1]); }
+    else { flushBullets(); para.push(line); }
+  }
+  flushPara(); flushBullets();
+
+  const pStyle = {
+    margin: `0 0 ${marginBottom}px`, fontFamily: 'var(--font-body)', fontSize: size,
+    lineHeight, color: 'var(--text-secondary)', textWrap: 'pretty',
+  };
+  return blocks.map((b, i) => b.type === 'ul' ? (
+    <ul key={i} style={{ ...pStyle, paddingLeft: 22 }}>
+      {b.items.map((it, j) => <li key={j} style={{ marginBottom: 6 }}>{it}</li>)}
+    </ul>
+  ) : (
+    <p key={i} style={pStyle}>{b.text}</p>
+  ));
+}
+
+function TagChip({ label, active, onClick, small }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: small ? '3px 10px' : '7px 14px',
+      borderRadius: 'var(--radius-full)',
+      border: `1px solid ${active ? 'var(--neve-ink-navy)' : 'var(--border-default)'}`,
+      background: active ? 'var(--neve-ink-navy)' : 'var(--surface-card)',
+      color: active ? 'var(--neve-warm-ivory)' : 'var(--text-secondary)',
+      fontFamily: 'var(--font-body)', fontSize: small ? 11.5 : 13.5,
+      cursor: onClick ? 'pointer' : 'default',
+      transition: 'var(--transition-fast)', whiteSpace: 'nowrap',
+    }}>{label}</button>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+function ProjectCard({ project, onOpen }) {
+  const [hover, setHover] = React.useState(false);
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={() => onOpen(project)}
+      style={{
+        background: 'var(--surface-card)', border: '1px solid var(--border-default)',
+        borderRadius: 'var(--radius-lg)', overflow: 'hidden', cursor: 'pointer',
+        boxShadow: hover ? 'var(--shadow-2)' : 'var(--shadow-1)',
+        transform: hover ? 'translateY(-4px)' : 'none',
+        transition: 'var(--transition-base)',
+        display: 'flex', flexDirection: 'column', height: '100%',
+      }}>
+      <div style={{
+        position: 'relative', aspectRatio: '16 / 9',
+        background: project.duo[0], overflow: 'hidden',
+      }}>
+        {project.cover ? (
+          <img src={coverSrc(project.cover)} alt={project.title} draggable={false} style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+          }} />
+        ) : null}
+        {project.year ? (
+          <span style={{
+            position: 'absolute', left: 12, bottom: 12,
+            padding: '4px 11px', borderRadius: 'var(--radius-full)',
+            background: 'rgba(15,23,42,0.62)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)',
+            border: '1px solid rgba(247,245,242,0.18)',
+            fontFamily: 'var(--font-body)', fontSize: 11.5, fontWeight: 600, letterSpacing: '0.04em',
+            color: 'var(--neve-warm-ivory)',
+          }}>{project.year}</span>
+        ) : null}
+      </div>
+      <div style={{ padding: '18px 20px 20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+          {project.tags.map((t) => <TagChip key={t} label={t} small />)}
+        </div>
+        {(project.project || project.year) ? (
+          <div className="neve-eyebrow" style={{
+            color: 'var(--text-muted)', marginBottom: 6, lineHeight: 1.4,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>
+            {project.project || project.year}
+          </div>
+        ) : null}
+        <h3 style={{
+          margin: '0 0 6px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 24, lineHeight: 1.18, color: 'var(--neve-ink-navy)',
+          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+        }}>{project.title}</h3>
+        {project.summary ? (
+          <p style={{
+            margin: 0, fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.55,
+            color: 'var(--text-secondary)', textWrap: 'pretty',
+            display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}>{project.summary}</p>
+        ) : null}
+        <div style={{
+          marginTop: 'auto', paddingTop: 14, display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500,
+          color: hover ? 'var(--neve-clay-orange)' : 'var(--text-muted)',
+          transition: 'var(--transition-fast)',
+        }}>
+          Read the case
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RolePage({ role, projects = [], onBack, onOpenPost }) {
+  const [tag, setTag] = React.useState(null);
+  const allTags = [...new Set(projects.flatMap((p) => p.tags))];
+  const shown = tag ? projects.filter((p) => p.tags.includes(tag)) : projects;
+
+  return (
+    <PageShell label={`Role — ${role.title}`}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(76px, 11vh, 110px) clamp(20px, 5vw, 48px) 80px' }}>
+        <BackLink label="All identities" onClick={onBack} />
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)', marginTop: 18 }}>{role.eyebrow}</div>
+        <h2 style={{
+          margin: '10px 0 12px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(34px, 5vw, 52px)', lineHeight: 1.05, color: 'var(--neve-ink-navy)',
+        }}>{role.title}</h2>
+        <p style={{
+          margin: 0, maxWidth: 620, fontFamily: 'var(--font-body)', fontSize: 16,
+          lineHeight: 1.55, color: 'var(--text-secondary)', textWrap: 'pretty',
+        }}>{role.desc}</p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '28px 0 26px' }}>
+          <TagChip label="All" active={!tag} onClick={() => setTag(null)} />
+          {allTags.map((t) => (
+            <TagChip key={t} label={t} active={tag === t} onClick={() => setTag(tag === t ? null : t)} />
+          ))}
+        </div>
+
+        <div style={{
+          display: 'grid', gap: 24,
+          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+        }}>
+          {shown.map((p) => <ProjectCard key={p.id} project={p} onOpen={onOpenPost} />)}
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* About-page social link: a dark rounded-square button wrapping the shared
+   ContactIcon glyph, so every icon stays defined in exactly one place. */
+function SocialIcon({ type, label, href }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" title={label} aria-label={label} style={{
+      width: 34, height: 34, borderRadius: 9, display: 'grid', placeItems: 'center', flex: '0 0 auto',
+      background: 'var(--neve-ink-navy)', color: 'var(--neve-warm-ivory)', textDecoration: 'none',
+      boxShadow: 'var(--shadow-1)', transition: 'var(--transition-fast)',
+    }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}>
+      <ContactIcon type={type} />
+    </a>
+  );
+}
+
+function AboutPage({ onExplore }) {
+  // Highlight + accent colour: NEVE "gentle attention" amber token.
+  const HL = 'var(--neve-muted-amber)';
+  // Render a paragraph, turning ==marked== phrases into highlighter spans.
+  const mark = (text) => text.split('==').map((seg, i) => (
+    i % 2 === 1 ? (
+      <mark key={i} style={{
+        background: HL, color: 'var(--neve-ink-navy)', fontWeight: 600,
+        padding: '0.06em 0.3em', borderRadius: 4,
+        boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
+      }}>{seg}</mark>
+    ) : <React.Fragment key={i}>{seg}</React.Fragment>
+  ));
+  return (
+    <PageShell label="About me">
+      <div style={{ maxWidth: 760, margin: '0 auto', padding: 'clamp(92px, 13vh, 128px) clamp(20px, 5vw, 48px) 90px' }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)' }}>{ABOUT.eyebrow}</div>
+
+        {/* Header: name + circular portrait + social icons (reference layout). */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'clamp(16px, 3.2vw, 30px)', flexWrap: 'wrap', margin: '14px 0 6px' }}>
+          <h1 style={{
+            margin: 0, fontFamily: 'var(--font-display)', fontWeight: 400,
+            fontSize: 'clamp(40px, 7vw, 74px)', lineHeight: 1.0, letterSpacing: '-0.015em',
+            color: 'var(--neve-ink-navy)',
+          }}>{ABOUT.name}</h1>
+          {ABOUT.portrait ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src={`images/${ABOUT.portrait}`} alt={ABOUT.name} style={{
+                width: 'clamp(86px, 12vw, 116px)', height: 'clamp(86px, 12vw, 116px)',
+                borderRadius: '50%', objectFit: 'cover', display: 'block', boxShadow: 'var(--shadow-2)',
+              }} />
+              {ABOUT.socials && ABOUT.socials.length ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {ABOUT.socials.map((s) => <SocialIcon key={s.type} {...s} />)}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        {ABOUT.aka ? (
+          <p style={{
+            margin: '0 0 30px', fontFamily: 'var(--font-body)', fontStyle: 'italic',
+            fontSize: 15, color: 'var(--text-muted)',
+          }}>{ABOUT.aka}</p>
+        ) : null}
+
+        {/* Highlighted intro with a left accent bar (reference treatment). */}
+        <div style={{ borderLeft: `3px solid ${HL}`, paddingLeft: 'clamp(16px, 3vw, 26px)' }}>
+          {ABOUT.intro.map((para, i) => (
+            <p key={i} style={{
+              margin: i === ABOUT.intro.length - 1 ? 0 : '0 0 18px',
+              fontFamily: 'var(--font-body)', fontSize: 'clamp(16px, 1.4vw, 18px)',
+              lineHeight: 1.75, color: 'var(--text-secondary)', textWrap: 'pretty',
+            }}>{mark(para)}</p>
+          ))}
+        </div>
+
+        <div style={{ marginTop: 44, paddingTop: 28, borderTop: '1px solid var(--border-default)' }}>
+          <button onClick={onExplore} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'none', border: 'none', padding: '6px 0', cursor: 'pointer',
+            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, color: 'var(--neve-clay-orange)',
+          }}>
+            See what I do
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+function BlogPost({ role, post, backLabel, onBack }) {
+  const back = backLabel || (role && role.title) || 'Back';
+  return (
+    <PageShell label={`Case — ${post.title}`}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: 'clamp(76px, 11vh, 110px) clamp(20px, 5vw, 48px) 96px' }}>
+        <BackLink label={back} onClick={onBack} />
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, margin: '22px 0 14px' }}>
+          {post.tags.map((t) => <TagChip key={t} label={t} small />)}
+        </div>
+
+        {(post.year || post.project) ? (
+          <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)', marginBottom: 10 }}>
+            {[post.year, post.project].filter(Boolean).join('  ·  ')}
+          </div>
+        ) : null}
+
+        <h1 style={{
+          margin: '0 0 18px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(34px, 5.5vw, 54px)', lineHeight: 1.06, letterSpacing: '-0.01em',
+          color: 'var(--neve-ink-navy)', textWrap: 'pretty',
+        }}>{post.title}</h1>
+
+        {post.summary ? (
+          // Design-system callout (mirrors NEVE.Banner, info tone): tinted info
+          // surface, radius-md, 3px info accent rule, semibold info-fg title.
+          <div role="note" style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            margin: '0 0 26px', padding: 'clamp(16px, 2.4vw, 20px)',
+            background: 'var(--feedback-info-bg)', borderRadius: 'var(--radius-md)',
+            borderLeft: '3px solid var(--neve-info)',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 600,
+                letterSpacing: '0.04em', textTransform: 'uppercase',
+                color: 'var(--feedback-info-fg)', marginBottom: 6,
+              }}>Summary</div>
+              <p style={{
+                margin: 0, fontFamily: 'var(--font-body)', fontSize: 15.5, lineHeight: 1.55,
+                color: 'var(--text-secondary)', textWrap: 'pretty',
+              }}>{post.summary}</p>
+            </div>
+          </div>
+        ) : null}
+
+        {post.link ? <ProjectLinkButton href={post.link} note={post.linkNote} /> : null}
+
+        {post.blog.intro ? (
+          <div style={{ marginBottom: 16 }}>
+            <RichText text={post.blog.intro} size={18} lineHeight={1.65} marginBottom={16} />
+          </div>
+        ) : null}
+
+        {post.cover ? (
+          <img src={coverSrc(post.cover)} alt={post.title} style={{
+            width: '100%', aspectRatio: '16 / 9', objectFit: 'cover',
+            borderRadius: 14, display: 'block', marginBottom: 40,
+          }} />
+        ) : null}
+
+        {(() => {
+          let quoteShown = false;
+          return post.blog.sections.map((s, i) => {
+            // image block — full-width figure with optional caption
+            if (s.type === 'image') {
+              const isrc = coverSrc(s.src);
+              if (!isrc) return null;
+              return (
+                <figure key={i} style={{ margin: '0 0 34px' }}>
+                  <img src={isrc} alt={s.caption || post.title} style={{
+                    width: '100%', borderRadius: 14, display: 'block',
+                    border: '1px solid var(--border-default)',
+                  }} />
+                  {s.caption ? (
+                    <figcaption style={{
+                      marginTop: 8, fontFamily: 'var(--font-body)', fontSize: 13,
+                      color: 'var(--text-muted)', textAlign: 'center', textWrap: 'pretty',
+                    }}>{s.caption}</figcaption>
+                  ) : null}
+                </figure>
+              );
+            }
+            // text section — render quote after the first text section
+            const showQuote = !quoteShown && post.blog.quote;
+            if (showQuote) quoteShown = true;
+            return (
+              <React.Fragment key={i}>
+                <section style={{ marginBottom: 34 }}>
+                  <h2 style={{
+                    margin: '0 0 10px', fontFamily: 'var(--font-display)', fontWeight: 400,
+                    fontSize: 27, lineHeight: 1.15, color: 'var(--neve-ink-navy)',
+                  }}>{s.h}</h2>
+                  <RichText text={s.p} size={16} lineHeight={1.7} marginBottom={14} />
+                </section>
+                {showQuote ? (
+                  <blockquote style={{
+                    margin: '0 0 34px', padding: '6px 0 6px 24px',
+                    borderLeft: '2px solid var(--neve-clay-orange)',
+                    fontFamily: 'var(--font-display)', fontWeight: 400, fontStyle: 'italic',
+                    fontSize: 24, lineHeight: 1.35, color: 'var(--neve-ink-navy)', textWrap: 'pretty',
+                  }}>{post.blog.quote}</blockquote>
+                ) : null}
+              </React.Fragment>
+            );
+          });
+        })()}
+
+        <div style={{
+          marginTop: 48, paddingTop: 28, borderTop: '1px solid var(--border-default)',
+        }}>
+          <BackLink label={`Back to ${back}`} onClick={onBack} />
+        </div>
+      </div>
+    </PageShell>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Blog — list of free-form writing (side projects, notes). Reuses
+   ProjectCard for the grid and BlogPost for the article view. */
+function BlogList({ posts = [], onOpen }) {
+  return (
+    <PageShell label="Blog">
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: 'clamp(92px, 13vh, 128px) clamp(20px, 5vw, 48px) 80px' }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)' }}>Writing</div>
+        <h1 style={{
+          margin: '10px 0 12px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(34px, 5vw, 52px)', lineHeight: 1.05, color: 'var(--neve-ink-navy)',
+        }}>Blog</h1>
+        <p style={{
+          margin: '0 0 32px', maxWidth: 600, fontFamily: 'var(--font-body)', fontSize: 16,
+          lineHeight: 1.55, color: 'var(--text-secondary)', textWrap: 'pretty',
+        }}>Side projects, experiments, and notes from the desk — the things that don't fit a case study.</p>
+
+        {posts.length ? (
+          <div style={{
+            display: 'grid', gap: 24,
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+          }}>
+            {posts.map((p) => <ProjectCard key={p.id} project={p} onOpen={onOpen} />)}
+          </div>
+        ) : (
+          <p style={{
+            padding: '40px 0', fontFamily: 'var(--font-body)', fontSize: 15,
+            color: 'var(--text-muted)', fontStyle: 'italic',
+          }}>No posts yet — check back soon.</p>
+        )}
+      </div>
+    </PageShell>
+  );
+}
+
+/* App shell: intro → question → identity deck → role → post */
+const NEVE = window.NEVEDesignSystem_bf520b || {};
+const { Button } = NEVE;
+
+/* ---------- icons ---------- */
+function Arrow({ dir = 'right' }) {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"
+      style={{ transform: dir === 'left' ? 'scaleX(-1)' : 'none' }}>
+      <path d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+/* ===================================================================== */
+/* Page 2 — how did you find me                                          */
+/* ===================================================================== */
+function QuestionCard({ onSubmit }) {
+  const [val, setVal] = React.useState(null);
+  const options = SURVEY_OPTIONS;
+  return (
+    <div data-screen-label="Question — how did you find me" style={{
+      position: 'absolute', inset: 0, overflowY: 'auto',
+      background: 'radial-gradient(120% 90% at 50% 12%, #FBFAF8 0%, var(--neve-warm-ivory) 70%)',
+    }}>
+      <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 'clamp(72px, 10vh, 96px) 24px 48px' }}>
+      <div className="neve-rise" style={{
+        width: 'min(480px, 100%)', background: 'var(--surface-card)',
+        border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-2)', padding: 'clamp(28px, 5vw, 44px)',
+      }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)' }}>Before we go in</div>
+        <h2 style={{
+          margin: '12px 0 8px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(28px, 4.5vw, 38px)', lineHeight: 1.1, color: 'var(--neve-ink-navy)',
+        }}>How did you find me?</h2>
+        <p style={{
+          margin: '0 0 26px', fontFamily: 'var(--font-body)', fontSize: 15,
+          lineHeight: 1.5, color: 'var(--text-secondary)',
+        }}>Just curious — it quietly helps me know who's stopping by.</p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {options.map((o) => {
+            const active = val === o.id;
+            return (
+              <label key={o.id} onClick={() => setVal(o.id)} style={{
+                display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
+                padding: '13px 14px', borderRadius: 'var(--radius-sm)',
+                border: `1px solid ${active ? 'var(--neve-ink-navy)' : 'transparent'}`,
+                background: active ? 'var(--surface-sunken)' : 'transparent',
+                transition: 'var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--surface-hover)'; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                <span style={{
+                  width: 20, height: 20, flexShrink: 0, borderRadius: '50%',
+                  display: 'grid', placeItems: 'center',
+                  border: `1px solid ${active ? 'var(--action-primary)' : 'var(--border-strong)'}`,
+                  transition: 'var(--transition-fast)',
+                }}>
+                  {active ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--action-primary)' }} /> : null}
+                </span>
+                <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--text-primary)' }}>{o.label}</span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 28 }}>
+          <Button variant="primary" size="lg" fullWidth disabled={!val}
+            onClick={() => onSubmit(val)} iconRight={<Arrow />}>
+            Continue
+          </Button>
+        </div>
+      </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================================== */
+/* Page 3 — swipeable identity deck                                      */
+/* ===================================================================== */
+const ROLES = [
+  {
+    id: 'product', num: '01', eyebrow: 'Design systems · 0→1 product',
+    title: 'Product designer',
+    duo: ['#0F172A', '#4C6B8A'],
+    desc: 'Where business goals meet design decisions.',
+  },
+  {
+    id: 'ux', num: '02', eyebrow: 'User research · information architecture',
+    title: 'UX designer & Researcher',
+    duo: ['#4C6B8A', '#B8B4D8'],
+    desc: 'I ask why before I design anything.',
+  },
+  {
+    id: 'ai', num: '03', eyebrow: 'AI workflows · prompt engineering',
+    title: 'Product Builder',
+    duo: ['#1E293B', '#B8B4D8'],
+    desc: 'I build with AI to move faster and think bigger.',
+  },
+  {
+    id: 'knit', num: '04', eyebrow: 'Knitting · crochet · macramé',
+    title: 'Knitwear designer',
+    duo: ['#E07A5F', '#F2C48D'],
+    desc: 'I create tactile pieces through knitting, crochet, and macramé, turning slow craft into wearable objects, soft textures, and everyday rituals.',
+  },
+];
+
+/* ============================================================================
+   Role animations — six looping "identity" scenes (React + inline SVG, no deps).
+   Ported from the NEVE design handoff. Renamed colour tokens NEVE → RAC to avoid
+   clashing with the design-system object already named NEVE in this file; hooks
+   use React.* so nothing is re-declared when the modules are concatenated into
+   the no-build bundle.
+   ========================================================================== */
+const RAC = {
+  ink: '#0F172A', ink300: '#94A3B8', dust: '#4C6B8A', moss: '#6B7F6B',
+  ivory: '#F7F5F2', ivoryD: '#EFEBE5', stone: '#E5E7EB', white: '#FFFFFF',
+  amber: '#F2C48D', amberD: '#D99A4E', clay: '#E07A5F', lav: '#B8B4D8',
+};
+const RA_SANS = 'Inter, system-ui, sans-serif';
+const ra_clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const RA_Easing = {
+  easeOutCubic: (t) => (--t) * t * t + 1,
+  easeInCubic: (t) => t * t * t,
+  easeInOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1),
+  easeOutBack: (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); },
+};
+function ra_pp(t, a, b, ease) {
+  const r = ra_clamp((b - a) === 0 ? 0 : (t - a) / (b - a), 0, 1);
+  return ease ? ease(r) : r;
+}
+function ra_fade(localTime, dur) {
+  const inT = ra_pp(localTime, 0, 0.45, RA_Easing.easeOutCubic);
+  const outT = ra_pp(localTime, dur - 0.4, dur, RA_Easing.easeInCubic);
+  return inT * (1 - outT);
+}
+
+// 1 — Product designer: artboard + shapes + cursor
+function SceneProductDesigner({ s }) {
+  const t = s.localTime;
+  const board = ra_pp(t, 0.35, 0.8, RA_Easing.easeOutCubic);
+  const circle = ra_pp(t, 0.85, 1.2, RA_Easing.easeOutBack);
+  const rect = ra_pp(t, 1.1, 1.45, RA_Easing.easeOutBack);
+  const tri = ra_pp(t, 1.35, 1.7, RA_Easing.easeOutBack);
+  const cursor = ra_pp(t, 1.7, 2.1, RA_Easing.easeInOutCubic);
+  const handles = ra_pp(t, 2.05, 2.35, RA_Easing.easeOutBack);
+  const cx = -40 + cursor * 90, cy = 30 - cursor * 70;
+  return (
+    <div style={{ position: 'relative', width: 460, height: 340 }}>
+      <div style={{
+        position: 'absolute', left: 50, top: 30, width: 360, height: 270,
+        background: RAC.white, border: `1px solid ${RAC.stone}`, borderRadius: 16,
+        boxShadow: '0 18px 40px rgba(15,23,42,0.10)',
+        opacity: board, transform: `scale(${0.94 + board * 0.06})`, transformOrigin: 'center',
+      }}>
+        <div style={{ position: 'absolute', top: 16, left: 18, fontFamily: RA_SANS, fontSize: 11, fontWeight: 600, letterSpacing: '0.1em', color: RAC.ink300, textTransform: 'uppercase' }}>Artboard</div>
+        <div style={{ position: 'absolute', left: 48, top: 86, width: 92, height: 92, borderRadius: 99, background: RAC.clay, opacity: circle, transform: `scale(${circle})` }}></div>
+        <div style={{ position: 'absolute', left: 150, top: 70, width: 150, height: 60, borderRadius: 12, background: RAC.ink, opacity: rect, transform: `scale(${rect})`, transformOrigin: 'left center' }}></div>
+        <div style={{ position: 'absolute', left: 168, top: 150, width: 0, height: 0,
+          borderLeft: '52px solid transparent', borderRight: '52px solid transparent',
+          borderBottom: `92px solid ${RAC.dust}`, opacity: tri, transform: `scale(${tri})`, transformOrigin: 'center bottom' }}></div>
+        {[[150,70],[300,70],[150,130],[300,130]].map(([hx,hy],i)=>(
+          <div key={i} style={{ position: 'absolute', left: hx-4, top: hy-4, width: 8, height: 8, borderRadius: 2, background: RAC.white, border: `1.5px solid ${RAC.dust}`, opacity: handles, transform: `scale(${handles})` }}></div>
+        ))}
+        {handles > 0 && (
+          <div style={{ position: 'absolute', left: 150, top: 70, width: 150, height: 60, border: `1.5px solid ${RAC.dust}`, borderRadius: 12, opacity: handles * 0.9 }}></div>
+        )}
+      </div>
+      <svg width="26" height="30" viewBox="0 0 26 30" style={{ position: 'absolute', left: 250 + cx, top: 150 + cy, opacity: cursor, filter: 'drop-shadow(0 2px 3px rgba(15,23,42,0.25))' }}>
+        <path d="M3 2 L3 24 L9 18 L13 27 L17 25 L13 16 L21 16 Z" fill={RAC.ink} stroke={RAC.white} strokeWidth="1.4" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+}
+
+// 2 — UX designer: wireframe screens + flow arrows
+function RA_WireCard({ x, appear, accent }) {
+  return (
+    <div style={{
+      position: 'absolute', left: x, top: 40, width: 120, height: 168,
+      background: RAC.white, border: `1px solid ${RAC.stone}`, borderRadius: 12,
+      boxShadow: '0 12px 28px rgba(15,23,42,0.08)',
+      opacity: appear, transform: `translateY(${(1-appear)*18}px)`,
+      padding: 14, boxSizing: 'border-box',
+    }}>
+      <div style={{ width: 40, height: 8, borderRadius: 99, background: accent, opacity: 0.9, marginBottom: 12 }}></div>
+      <div style={{ width: '100%', height: 46, borderRadius: 8, background: RAC.ivoryD, marginBottom: 12 }}></div>
+      <div style={{ width: '85%', height: 7, borderRadius: 99, background: RAC.stone, marginBottom: 8 }}></div>
+      <div style={{ width: '65%', height: 7, borderRadius: 99, background: RAC.stone, marginBottom: 16 }}></div>
+      <div style={{ width: 52, height: 18, borderRadius: 6, background: RAC.ink }}></div>
+    </div>
+  );
+}
+function SceneUxDesigner({ s }) {
+  const t = s.localTime;
+  const c1 = ra_pp(t, 0.4, 0.8, RA_Easing.easeOutCubic);
+  const c2 = ra_pp(t, 0.95, 1.35, RA_Easing.easeOutCubic);
+  const c3 = ra_pp(t, 1.5, 1.9, RA_Easing.easeOutCubic);
+  const a1 = ra_pp(t, 1.3, 1.75, RA_Easing.easeInOutCubic);
+  const a2 = ra_pp(t, 1.85, 2.3, RA_Easing.easeInOutCubic);
+  const DASH = 70;
+  return (
+    <div style={{ position: 'relative', width: 560, height: 250 }}>
+      <RA_WireCard x={30}  appear={c1} accent={RAC.dust} />
+      <RA_WireCard x={220} appear={c2} accent={RAC.dust} />
+      <RA_WireCard x={410} appear={c3} accent={RAC.dust} />
+      <svg width="560" height="250" viewBox="0 0 560 250" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+        <defs>
+          <marker id="ux-arrow" markerWidth="9" markerHeight="9" refX="6" refY="4.5" orient="auto">
+            <path d="M1 1 L7 4.5 L1 8" fill="none" stroke={RAC.dust} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+          </marker>
+        </defs>
+        <path d="M150 124 H220" fill="none" stroke={RAC.dust} strokeWidth="2"
+          strokeDasharray={DASH} strokeDashoffset={DASH * (1 - a1)} markerEnd={a1 > 0.85 ? 'url(#ux-arrow)' : undefined}/>
+        <path d="M340 124 H410" fill="none" stroke={RAC.dust} strokeWidth="2"
+          strokeDasharray={DASH} strokeDashoffset={DASH * (1 - a2)} markerEnd={a2 > 0.85 ? 'url(#ux-arrow)' : undefined}/>
+      </svg>
+    </div>
+  );
+}
+
+// 3 — Product builder: blocks assemble + gear
+function SceneProductBuilder({ s }) {
+  const t = s.localTime;
+  const B = 78, G = 8, ox = 70, oy = 36;
+  const blocks = [
+    { col:0, row:0, from:[-220,-40], at:[0.5,0.95], color: RAC.dust },
+    { col:1, row:0, from:[ 220,-40], at:[0.7,1.15], color: RAC.ink  },
+    { col:0, row:1, from:[-220, 60], at:[0.9,1.35], color: RAC.moss },
+    { col:1, row:1, from:[ 220, 60], at:[1.1,1.55], color: RAC.amber },
+  ];
+  const gearSpin = t * 90;
+  return (
+    <div style={{ position: 'relative', width: 360, height: 320 }}>
+      {blocks.map((b, i) => {
+        const a = ra_pp(t, b.at[0], b.at[1], RA_Easing.easeOutCubic);
+        const x = ox + b.col * (B + G) + (1 - a) * b.from[0];
+        const y = oy + b.row * (B + G) + (1 - a) * b.from[1];
+        return (
+          <div key={i} style={{
+            position: 'absolute', left: x, top: y, width: B, height: B,
+            background: b.color, borderRadius: 14, opacity: a,
+            boxShadow: '0 10px 24px rgba(15,23,42,0.12)',
+          }}>
+            <div style={{ position:'absolute', inset: 0, borderRadius: 14, border: '2px solid rgba(255,255,255,0.18)' }}></div>
+          </div>
+        );
+      })}
+      <svg width="84" height="84" viewBox="0 0 24 24" style={{
+        position: 'absolute', left: ox + 2*(B+G) - 34, top: oy - 34,
+        opacity: ra_pp(t, 1.3, 1.7, RA_Easing.easeOutBack),
+        transform: `rotate(${gearSpin}deg) scale(${ra_pp(t,1.3,1.7,RA_Easing.easeOutBack)})`, transformOrigin: 'center',
+      }}>
+        <circle cx="12" cy="12" r="11" fill={RAC.white} stroke={RAC.stone} strokeWidth="0.6"/>
+        <path d="M12 3.2l1.1 1.9a7 7 0 0 1 1.7.7l2.1-.5 1.3 2.2-1.4 1.6c.1.6.1 1.2 0 1.8l1.4 1.6-1.3 2.2-2.1-.5a7 7 0 0 1-1.7.7L12 20.8l-1.1-1.9a7 7 0 0 1-1.7-.7l-2.1.5-1.3-2.2 1.4-1.6a7 7 0 0 1 0-1.8L5.2 9.5l1.3-2.2 2.1.5a7 7 0 0 1 1.7-.7L12 3.2z"
+          fill="none" stroke={RAC.clay} strokeWidth="1.6" strokeLinejoin="round"/>
+        <circle cx="12" cy="12" r="3.1" fill="none" stroke={RAC.clay} strokeWidth="1.6"/>
+      </svg>
+    </div>
+  );
+}
+
+// 4 — Knitwear designer: yarn ball + needles + knit stitches
+function SceneKnitwear({ s }) {
+  const t = s.localTime;
+  const needles = ra_pp(t, 0.4, 0.85, RA_Easing.easeOutCubic);
+  const stitchReveal = ra_pp(t, 0.7, 1.9, RA_Easing.easeInOutCubic);
+  const yarn = ra_pp(t, 1.5, 1.95, RA_Easing.easeOutBack);
+  const cols = 7, sw = 46, x0 = 60, yRow = 120, h = 34;
+  const visible = stitchReveal * cols;
+  return (
+    <div style={{ position: 'relative', width: 520, height: 300 }}>
+      <svg width="520" height="300" viewBox="0 0 520 300" style={{ position: 'absolute', inset: 0 }}>
+        <g opacity={needles} transform={`scale(${0.96 + needles*0.04})`} style={{ transformOrigin: '260px 150px' }}>
+          <line x1="40" y1="250" x2="430" y2="60"  stroke={RAC.ink} strokeWidth="6" strokeLinecap="round"/>
+          <circle cx="430" cy="60" r="9" fill={RAC.clay}/>
+          <line x1="90" y1="60" x2="480" y2="250" stroke={RAC.ink} strokeWidth="6" strokeLinecap="round"/>
+          <circle cx="480" cy="250" r="9" fill={RAC.clay}/>
+        </g>
+        {[0,1].map(rowI => (
+          <g key={rowI}>
+            {Array.from({length: cols}).map((_, i) => {
+              const reveal = ra_clamp(visible - i, 0, 1);
+              if (reveal <= 0) return null;
+              const x = x0 + i * sw, y = yRow + rowI * (h + 6);
+              return (
+                <path key={i} d={`M${x} ${y} L${x + sw/2} ${y + h} L${x + sw} ${y}`}
+                  fill="none" stroke={rowI === 0 ? RAC.amber : RAC.amberD} strokeWidth="7"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  opacity={reveal} strokeDasharray="80" strokeDashoffset={80 * (1 - reveal)}/>
+              );
+            })}
+          </g>
+        ))}
+        <path d={`M${x0 + cols*sw - sw/2} ${yRow + h} C 420 230, 470 200, 452 196`}
+          fill="none" stroke={RAC.amberD} strokeWidth="3" opacity={yarn}
+          strokeDasharray="120" strokeDashoffset={120 * (1 - yarn)}/>
+      </svg>
+      <div style={{
+        position: 'absolute', left: 408, top: 168, width: 92, height: 92, borderRadius: 99,
+        background: RAC.amber, opacity: yarn, transform: `scale(${yarn})`,
+        boxShadow: '0 10px 24px rgba(15,23,42,0.12)', overflow: 'hidden',
+      }}>
+        <svg width="92" height="92" viewBox="0 0 92 92">
+          {[18,34,50,66].map((d,i)=>(
+            <ellipse key={i} cx="46" cy="46" rx="40" ry={14+i*4} fill="none" stroke={RAC.amberD} strokeWidth="2.4" opacity="0.55" transform={`rotate(${i*40} 46 46)`}/>
+          ))}
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// 5 — Podcaster: studio mic + sound waves + equalizer
+function ra_arcPath(cx, cy, r, a0, a1, sweep) {
+  const rad = (d) => (d * Math.PI) / 180;
+  const x0 = cx + r * Math.cos(rad(a0)), y0 = cy + r * Math.sin(rad(a0));
+  const x1 = cx + r * Math.cos(rad(a1)), y1 = cy + r * Math.sin(rad(a1));
+  return `M ${x0} ${y0} A ${r} ${r} 0 0 ${sweep} ${x1} ${y1}`;
+}
+function ScenePodcaster({ s }) {
+  const t = s.localTime;
+  const mic = ra_pp(t, 0.35, 0.85, RA_Easing.easeOutBack);
+  const waves = ra_pp(t, 0.95, 1.5, RA_Easing.easeOutCubic);
+  const eq = ra_pp(t, 1.3, 1.8, RA_Easing.easeOutCubic);
+  const cx = 260, cy = 130;
+  return (
+    <div style={{ position: 'relative', width: 520, height: 330 }}>
+      <svg width="520" height="330" viewBox="0 0 520 330">
+        {[0,1,2].map(i => {
+          const r = 56 + i * 34;
+          const appear = ra_clamp(waves - i * 0.16, 0, 1);
+          const pulse = 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 5 - i * 0.7));
+          return (
+            <g key={i} stroke={RAC.lav} strokeWidth="4" fill="none" strokeLinecap="round" opacity={appear * pulse}>
+              <path d={ra_arcPath(cx, cy, r, -48, 48, 1)} />
+              <path d={ra_arcPath(cx, cy, r, 132, 228, 0)} />
+            </g>
+          );
+        })}
+        <g opacity={mic} transform={`translate(${cx} 60) scale(${mic})`} style={{ transformOrigin: 'center top' }}>
+          <line x1="0" y1="118" x2="0" y2="178" stroke={RAC.ink} strokeWidth="6" strokeLinecap="round"/>
+          <path d="M -34 188 Q 0 172 34 188" stroke={RAC.ink} strokeWidth="6" fill="none" strokeLinecap="round"/>
+          <rect x="-29" y="-2" width="58" height="124" rx="29" fill={RAC.ink}/>
+          {[20,38,56,74,92].map((gy,i)=>(
+            <line key={i} x1="-20" y1={gy} x2="20" y2={gy} stroke="rgba(255,255,255,0.22)" strokeWidth="3" strokeLinecap="round"/>
+          ))}
+          <circle cx="0" cy="106" r="5" fill={RAC.clay}/>
+        </g>
+      </svg>
+      <svg width="520" height="64" viewBox="0 0 520 64" style={{ position: 'absolute', left: 0, top: 250 }}>
+        {Array.from({length: 13}).map((_, i) => {
+          const base = 10 + Math.abs(Math.sin(t * 6 + i * 0.55)) * 40;
+          const hh = base * eq, x = 130 + i * 20;
+          return <rect key={i} x={x} y={56 - hh} width="9" height={hh} rx="4" fill={i % 2 ? RAC.lav : RAC.dust} opacity={eq}/>;
+        })}
+      </svg>
+    </div>
+  );
+}
+
+// 6 — Exhibition strategy designer: floor plan + visitor route
+function ra_alongPath(pts, f) {
+  let total = 0; const segs = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const len = Math.hypot(pts[i+1][0]-pts[i][0], pts[i+1][1]-pts[i][1]);
+    segs.push(len); total += len;
+  }
+  let d = f * total;
+  for (let i = 0; i < segs.length; i++) {
+    if (d <= segs[i]) { const r = segs[i] ? d/segs[i] : 0; const a = pts[i], b = pts[i+1]; return [a[0]+(b[0]-a[0])*r, a[1]+(b[1]-a[1])*r]; }
+    d -= segs[i];
+  }
+  return pts[pts.length-1];
+}
+function SceneExhibition({ s }) {
+  const t = s.localTime;
+  const plan = ra_pp(t, 0.35, 0.85, RA_Easing.easeOutCubic);
+  const walls = ra_pp(t, 0.7, 1.15, RA_Easing.easeOutCubic);
+  const art = ra_pp(t, 1.0, 1.55, RA_Easing.easeOutBack);
+  const route = ra_pp(t, 1.4, 2.45, RA_Easing.easeInOutCubic);
+  const pts = [[70,222],[70,80],[200,80],[200,170],[340,170],[340,80],[450,80],[450,222]];
+  const routeD = 'M ' + pts.map(p => p.join(' ')).join(' L ');
+  const dot = ra_alongPath(pts, route);
+  const frames = [
+    { x:118, y:46, w:40, h:12, c:RAC.clay },
+    { x:248, y:46, w:40, h:12, c:RAC.dust },
+    { x:384, y:46, w:40, h:12, c:RAC.amberD },
+    { x:46, y:120, w:12, h:34, c:RAC.moss },
+    { x:462, y:120, w:12, h:34, c:RAC.lav },
+  ];
+  return (
+    <div style={{ position: 'relative', width: 520, height: 300 }}>
+      <svg width="520" height="300" viewBox="0 0 520 300">
+        <rect x="40" y="40" width="440" height="220" rx="6" fill={RAC.white} stroke={RAC.stone} strokeWidth="2"
+          opacity={plan} transform={`scale(${0.96 + plan*0.04})`} style={{ transformOrigin: '260px 150px' }}/>
+        <g stroke={RAC.ink} strokeWidth="5" strokeLinecap="round" opacity={walls}>
+          <line x1="200" y1="40" x2="200" y2="130" />
+          <line x1="340" y1="170" x2="340" y2="260" />
+        </g>
+        {frames.map((f, i) => (
+          <rect key={i} x={f.x} y={f.y} width={f.w} height={f.h} rx="2" fill={f.c}
+            opacity={art} transform={`scale(${art})`} style={{ transformOrigin: `${f.x+f.w/2}px ${f.y+f.h/2}px` }}/>
+        ))}
+        <path d={routeD} fill="none" stroke={RAC.dust} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+          pathLength="1" strokeDasharray="1" strokeDashoffset={1 - route} opacity={0.9}/>
+        <circle cx="70" cy="222" r="5.5" fill={RAC.ink} opacity={plan}/>
+        {route > 0.02 && (
+          <g>
+            <circle cx={dot[0]} cy={dot[1]} r="13" fill={RAC.clay} opacity={0.16}/>
+            <circle cx={dot[0]} cy={dot[1]} r="6.5" fill={RAC.clay} stroke={RAC.white} strokeWidth="2"/>
+          </g>
+        )}
+      </svg>
+    </div>
+  );
+}
+
+const RA_SCENES = {
+  'product-designer': SceneProductDesigner,
+  'ux-designer': SceneUxDesigner,
+  'product-builder': SceneProductBuilder,
+  'knitwear-designer': SceneKnitwear,
+  'podcaster': ScenePodcaster,
+  'exhibition-strategy': SceneExhibition,
+};
+// map a role/coming-soon id → animation key
+const ROLE_ANIM = {
+  product: 'product-designer', ux: 'ux-designer', ai: 'product-builder', knit: 'knitwear-designer',
+  podcaster: 'podcaster', 'exhibition-strategy': 'exhibition-strategy',
+};
+
+// A looping rAF playhead in seconds; freezes to a settled frame when the user
+// prefers reduced motion.
+function useReelClock(total) {
+  const [t, setT] = React.useState(0);
+  const raf = React.useRef(null);
+  React.useEffect(() => {
+    const reduce = typeof window !== 'undefined' && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { setT(total * 0.7); return; }
+    let last = null;
+    const step = (ts) => {
+      if (last == null) last = ts;
+      const dt = (ts - last) / 1000; last = ts;
+      setT((p) => (p + dt) % total);
+      raf.current = requestAnimationFrame(step);
+    };
+    raf.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf.current);
+  }, [total]);
+  return t;
+}
+
+// One role scene on its own loop, centred in a fixed stage.
+function RoleScene({ animKey, loopDuration = 2.9, width, height }) {
+  const t = useReelClock(loopDuration);
+  const Comp = RA_SCENES[animKey] || SceneProductDesigner;
+  return (
+    <div style={{ position: 'relative', width, height, overflow: 'hidden',
+      display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ opacity: ra_fade(t, loopDuration), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Comp s={{ localTime: t }} />
+      </div>
+    </div>
+  );
+}
+
+// Fills a card's media slot with the looping scene: ivory canvas (the scenes are
+// drawn for a light ground), with the fixed 560×340 stage scaled to fit the slot.
+const RA_STAGE_W = 560, RA_STAGE_H = 340;
+function RoleAnimatedMedia({ animKey }) {
+  const ref = React.useRef(null);
+  const [w, setW] = React.useState(300);
+  React.useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const update = () => setW(el.clientWidth || 300);
+    update();
+    let ro;
+    if (typeof ResizeObserver !== 'undefined') { ro = new ResizeObserver(update); ro.observe(el); }
+    else if (typeof window !== 'undefined') { window.addEventListener('resize', update); }
+    return () => { if (ro) ro.disconnect(); else if (typeof window !== 'undefined') window.removeEventListener('resize', update); };
+  }, []);
+  const scale = w / RA_STAGE_W;
+  return (
+    <div ref={ref} style={{
+      position: 'absolute', inset: 0, background: 'var(--neve-ivory-deep)', overflow: 'hidden',
+      borderBottom: '1px solid rgba(15,23,42,0.06)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <div style={{ width: RA_STAGE_W, height: RA_STAGE_H, flex: '0 0 auto', transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+        <RoleScene animKey={animKey} width={RA_STAGE_W} height={RA_STAGE_H} />
+      </div>
+    </div>
+  );
+}
+
+function Duotone({ duo, id, cover, alt }) {
+  if (cover) {
+    return (
+      <img src={coverSrc(cover)} alt={alt || ''} draggable={false} style={{
+        position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+      }} />
+    );
+  }
+  // No image yet — show the role's looping identity animation.
+  return <RoleAnimatedMedia animKey={ROLE_ANIM[id] || 'product-designer'} />;
+}
+
+function RoleCard({ role, onChoose }) {
+  const [hover, setHover] = React.useState(false);
+  const [flipped, setFlipped] = React.useState(false); // touch: 1st tap flips, 2nd enters
+  const touch = React.useRef(false);
+  const canHover = React.useMemo(
+    () => !(typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(hover: none)').matches),
+    []);
+  const flip = hover || flipped;
+  const onPointerDown = (e) => { touch.current = e.pointerType === 'touch'; };
+  const activate = () => {
+    // On touch, the first tap reveals the back; only the second tap enters.
+    if (touch.current && !flipped) { setFlipped(true); return; }
+    onChoose(role);
+  };
+  const faceBase = {
+    position: 'absolute', inset: 0, backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden',
+    borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-default)',
+  };
+  return (
+    <div
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onPointerDown={onPointerDown}
+      onClick={activate}
+      style={{
+        flex: '0 0 auto', width: 'clamp(248px, 74vw, 300px)', height: 452, scrollSnapAlign: 'center',
+        cursor: 'pointer', userSelect: 'none', perspective: 1500,
+      }}>
+      {/* flipper */}
+      <div style={{
+        position: 'relative', width: '100%', height: '100%',
+        transformStyle: 'preserve-3d', transition: 'transform 640ms var(--ease-calm)',
+        transform: flip ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        boxShadow: flip ? 'var(--shadow-3)' : 'var(--shadow-1)', borderRadius: 'var(--radius-lg)',
+      }}>
+        {/* FRONT */}
+        <div style={{ ...faceBase, display: 'flex', flexDirection: 'column', background: 'var(--surface-card)' }}>
+          <div style={{ position: 'relative', width: '100%', height: 248, flexShrink: 0, overflow: 'hidden' }}>
+            <Duotone duo={role.duo} id={role.id} cover={role.cover} alt={role.title} />
+          </div>
+          <div style={{ padding: '18px 20px 20px' }}>
+            <div className="neve-eyebrow" style={{ color: 'var(--text-muted)' }}>{role.eyebrow}</div>
+            <h3 style={{
+              margin: '8px 0 0', fontFamily: 'var(--font-display)', fontWeight: 400,
+              fontSize: 26, lineHeight: 1.1, color: 'var(--neve-ink-navy)',
+            }}>{role.title}</h3>
+            <div style={{
+              marginTop: 12, display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontFamily: 'var(--font-body)', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap',
+              color: 'var(--text-muted)',
+            }}>
+              {canHover ? 'Hover to flip' : 'Tap to flip'} <Arrow />
+            </div>
+          </div>
+        </div>
+
+        {/* BACK */}
+        <div style={{
+          ...faceBase, transform: 'rotateY(180deg)',
+          display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
+          padding: '30px 26px', background: role.duo[0], borderColor: role.duo[0],
+        }}>
+          <div>
+            <div className="neve-eyebrow" style={{ color: 'rgba(247,245,242,0.62)' }}>{role.eyebrow}</div>
+            <h3 style={{
+              margin: '12px 0 16px', fontFamily: 'var(--font-display)', fontWeight: 400,
+              fontSize: 28, lineHeight: 1.08, color: 'var(--neve-warm-ivory)',
+            }}>{role.title}</h3>
+            <p style={{
+              margin: 0, fontFamily: 'var(--font-body)', fontSize: 15.5, lineHeight: 1.6,
+              color: 'rgba(247,245,242,0.92)', textWrap: 'pretty',
+            }}>{role.desc}</p>
+          </div>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7,
+            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 600, whiteSpace: 'nowrap',
+            color: 'var(--neve-muted-amber)',
+          }}>
+            Enter as this <Arrow />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComingSoonCard({ cs }) {
+  return (
+    <div style={{
+      flex: '0 0 auto', width: 'clamp(248px, 74vw, 300px)', height: 452, scrollSnapAlign: 'center',
+      display: 'flex', flexDirection: 'column',
+      background: 'var(--surface-card)', border: '1px dashed var(--border-strong)',
+      borderRadius: 'var(--radius-lg)', overflow: 'hidden', userSelect: 'none',
+      alignSelf: 'flex-start',
+    }}>
+      <div style={{ position: 'relative', width: '100%', height: 248, flexShrink: 0, overflow: 'hidden' }}>
+        <RoleAnimatedMedia animKey={ROLE_ANIM[cs.id] || 'podcaster'} />
+        <div style={{ position: 'absolute', top: 14, left: 14 }}>
+          <NEVE.Badge tone="warning">Coming soon</NEVE.Badge>
+        </div>
+      </div>
+      <div style={{ padding: '18px 20px 20px' }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--text-muted)' }}>{cs.eyebrow}</div>
+        <h3 style={{
+          margin: '8px 0 8px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 26, lineHeight: 1.1, color: 'var(--neve-ink-navy)',
+        }}>{cs.title}</h3>
+        <p style={{
+          margin: 0, fontFamily: 'var(--font-body)', fontSize: 13.5, lineHeight: 1.5,
+          color: 'var(--text-secondary)', textWrap: 'pretty',
+        }}>{cs.desc}</p>
+      </div>
+    </div>
+  );
+}
+
+function IdentityDeck({ onChoose }) {
+  const trackRef = React.useRef(null);
+  const drag = React.useRef({ down: false, x: 0, left: 0, moved: false });
+
+  function scrollByCard(dir) {
+    const t = trackRef.current;
+    if (!t) return;
+    const card = t.querySelector('[data-rolecard]');
+    const step = card ? card.offsetWidth + 20 : 320;
+    t.scrollBy({ left: dir * step, behavior: 'smooth' });
+  }
+
+  // pointer-drag to scroll
+  React.useEffect(() => {
+    const t = trackRef.current;
+    if (!t) return;
+    const down = (e) => { drag.current = { down: true, x: e.clientX, left: t.scrollLeft, moved: false }; };
+    const move = (e) => {
+      if (!drag.current.down) return;
+      const dx = e.clientX - drag.current.x;
+      if (Math.abs(dx) > 4) drag.current.moved = true;
+      t.scrollLeft = drag.current.left - dx;
+    };
+    const up = () => { drag.current.down = false; };
+    t.addEventListener('pointerdown', down);
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => { t.removeEventListener('pointerdown', down); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  }, []);
+
+  return (
+    <div data-screen-label="Identity deck" className="neve-rise" style={{
+      position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+      background: 'radial-gradient(120% 90% at 50% 0%, #FBFAF8 0%, var(--neve-warm-ivory) 70%)',
+      overflowY: 'auto', overflowX: 'hidden',
+    }}>
+      <div style={{
+        padding: 'clamp(76px, 9vh, 96px) 24px 0', maxWidth: 760, margin: '0 auto',
+        textAlign: 'center',
+      }}>
+        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)' }}>Choose your way in</div>
+        <h2 style={{
+          margin: '12px 0 10px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(30px, 5vw, 46px)', lineHeight: 1.06, color: 'var(--neve-ink-navy)',
+        }}>Which version of me do you need?</h2>
+        <p style={{
+          margin: 0, fontFamily: 'var(--font-body)', fontSize: 16, lineHeight: 1.5,
+          color: 'var(--text-secondary)',
+        }}>Hover a card to see what's inside, then pick the one that fits why you came.</p>
+      </div>
+
+      <div style={{ flex: '1 0 auto', display: 'flex', alignItems: 'center', minHeight: 0 }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16, width: '100%',
+          maxWidth: 1200, margin: '0 auto', padding: '0 clamp(12px, 4vw, 40px)',
+        }}>
+          <button className="neve-navbtn deck-arrow" onClick={() => scrollByCard(-1)} aria-label="Previous">
+            <Arrow dir="left" />
+          </button>
+          <div ref={trackRef} style={{
+            flex: 1, display: 'flex', gap: 20, overflowX: 'auto', padding: '28px 4px 32px',
+            scrollSnapType: 'x mandatory', scrollbarWidth: 'none', cursor: 'grab',
+          }}>
+            {ROLES.map((r) => (
+              <div data-rolecard key={r.id} onClickCapture={(e) => { if (drag.current.moved) { e.stopPropagation(); } }}>
+                <RoleCard role={r} onChoose={onChoose} />
+              </div>
+            ))}
+            <div aria-hidden="true" style={{
+              flex: '0 0 auto', width: 1, alignSelf: 'stretch',
+              background: 'var(--border-strong)', margin: '12px 6px', opacity: 0.6,
+            }}></div>
+            {COMING_SOON.map((cs) => <ComingSoonCard key={cs.id} cs={cs} />)}
+          </div>
+          <button className="neve-navbtn deck-arrow" onClick={() => scrollByCard(1)} aria-label="Next">
+            <Arrow />
+          </button>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+/* ===================================================================== */
+/* Top nav — transparent over the page, frosted opaque once scrolled      */
+/* ===================================================================== */
+function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const onAboutPage = stage === 'about';
+  const onPortfolioArea = stage === 'identity' || stage === 'role' || stage === 'post';
+  const onBlogArea = stage === 'blog' || stage === 'blogpost';
+  // Close the mobile menu whenever the page changes.
+  React.useEffect(() => { setMenuOpen(false); }, [stage]);
+  const linkBase = {
+    fontFamily: 'var(--font-body)', fontSize: 14.5, lineHeight: 1,
+    background: 'none', border: 'none', cursor: 'pointer', padding: '8px 2px',
+    transition: 'var(--transition-fast)', whiteSpace: 'nowrap',
+  };
+  const navLink = (active, onClick, label) => (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--neve-ink-navy)'; }}
+      onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+      style={{
+        ...linkBase,
+        color: active ? 'var(--neve-ink-navy)' : 'var(--text-secondary)',
+        fontWeight: active ? 600 : 400,
+      }}>{label}</button>
+  );
+  return (
+    <header style={{
+      position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20, height: 60,
+      display: 'flex', alignItems: 'center',
+      background: scrolled ? 'rgba(247,245,242,0.82)' : 'transparent',
+      backdropFilter: scrolled ? 'saturate(180%) blur(12px)' : 'none',
+      WebkitBackdropFilter: scrolled ? 'saturate(180%) blur(12px)' : 'none',
+      borderBottom: `1px solid ${scrolled ? 'var(--border-default)' : 'transparent'}`,
+      boxShadow: scrolled ? '0 1px 14px rgba(15,23,42,0.06)' : 'none',
+      transition: 'background 320ms var(--ease-calm), border-color 320ms var(--ease-calm), box-shadow 320ms var(--ease-calm)',
+    }}>
+      <div style={{
+        width: '100%', maxWidth: 1200, margin: '0 auto',
+        padding: '0 clamp(16px, 4vw, 40px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <span
+          onClick={onWordmark}
+          style={{
+            fontFamily: 'var(--font-display)', fontWeight: 400, fontSize: 'clamp(15px, 3.4vw, 21px)',
+            letterSpacing: '0.03em', color: 'var(--neve-ink-navy)', opacity: 0.92,
+            lineHeight: 1, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
+          }}>Wei-Yun Neve Ning</span>
+
+        <nav style={{ display: 'flex', alignItems: 'center' }}>
+          <button
+            className="nav-burger" aria-label="Menu" aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 8,
+              color: 'var(--neve-ink-navy)', lineHeight: 0,
+            }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round">
+              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+          </button>
+
+          {menuOpen ? (
+            <div onClick={() => setMenuOpen(false)} style={{ position: 'fixed', inset: 0, background: 'transparent' }} />
+          ) : null}
+
+          <div className={'nav-links' + (menuOpen ? ' open' : '')} onClick={() => setMenuOpen(false)}>
+          {navLink(onAboutPage, onAbout, 'About me')}
+          {navLink(onPortfolioArea, onPortfolio, 'Portfolio')}
+          {navLink(onBlogArea, onBlog, 'Blog')}
+
+          <a href={CV_URL} download
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, lineHeight: 1,
+              textDecoration: 'none', color: 'var(--neve-ink-navy)',
+              padding: '8px 16px', borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border-strong)', background: 'var(--surface-card)',
+              transition: 'var(--transition-fast)',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--neve-ink-navy)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.boxShadow = 'none'; }}>
+            CV
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 3v12M7 11l5 5 5-5M5 21h14" />
+            </svg>
+          </a>
+          </div>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+/* ===================================================================== */
+/* Root                                                                  */
+/* ===================================================================== */
+function App() {
+  const [stage, setStage] = React.useState('intro'); // intro | question | identity | role | post | blog | blogpost | about | admin
+  const [source, setSource] = React.useState(null);
+  const [role, setRole] = React.useState(null);
+  const [post, setPost] = React.useState(null);          // open case study
+  const [blogPost, setBlogPost] = React.useState(null);  // open blog article
+  const [scrolled, setScrolled] = React.useState(false);
+  const [answered, setAnswered] = React.useState(false); // questionnaire seen — skip it on return
+  const [store, setStore] = React.useState(() => loadStore()); // localStorage content override
+
+  // Effective (admin-edited or default) content; public views show only published.
+  const roleProjects = effectiveRoleProjects(store);
+  const currentProjects = role ? (roleProjects[role.id] || []).filter(isPublished) : [];
+  const publishedBlog = effectiveBlog(store).filter(isPublished);
+
+  const persist = (next) => { setStore(next); saveStore(next); };
+
+  const goPortfolio = () => { setStage('identity'); setRole(null); setPost(null); };
+  const goWelcome = () => { setStage('intro'); setRole(null); setPost(null); };
+  const goBlog = () => { setStage('blog'); setRole(null); setPost(null); setBlogPost(null); };
+  // From the welcome page: first time → questionnaire; afterwards → straight to the deck.
+  const enterFromWelcome = () => setStage(answered ? 'identity' : 'question');
+  const exitAdmin = () => {
+    if (typeof history !== 'undefined' && history.replaceState) {
+      history.replaceState(null, '', location.pathname + location.search);
+    }
+    setStage('identity');
+  };
+
+  // Track scroll of whichever stage's scroll container is active (scroll doesn't
+  // bubble, so listen in the capture phase to catch any descendant scroller).
+  React.useEffect(() => {
+    const onScroll = (e) => { setScrolled(((e.target && e.target.scrollTop) || 0) > 8); };
+    document.addEventListener('scroll', onScroll, true);
+    return () => document.removeEventListener('scroll', onScroll, true);
+  }, []);
+  // New stage always starts at the top — reset the nav to transparent.
+  React.useEffect(() => { setScrolled(false); }, [stage]);
+
+  const chromeless = stage === 'intro';
+
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      {!chromeless ? (
+        <NavBar
+          stage={stage}
+          scrolled={scrolled}
+          onWordmark={goWelcome}
+          onPortfolio={goPortfolio}
+          onBlog={goBlog}
+          onAbout={() => { setStage('about'); }}
+        />
+      ) : null}
+
+      <div style={{ position: 'absolute', inset: 0, opacity: stage === 'intro' ? 1 : 0, pointerEvents: stage === 'intro' ? 'auto' : 'none', transition: 'opacity 500ms var(--ease-calm)' }}>
+        {stage === 'intro' ? <ParticleFigure onEnter={enterFromWelcome} /> : null}
+      </div>
+
+      {stage === 'question' ? (
+        <QuestionCard onSubmit={(s) => { setSource(s); logSurvey(s); setAnswered(true); setStage('identity'); }} />
+      ) : null}
+
+      {stage === 'identity' ? (
+        <IdentityDeck onChoose={(r) => { setRole(r); setStage('role'); }} />
+      ) : null}
+
+      {stage === 'role' && role ? (
+        <RolePage
+          role={role}
+          projects={currentProjects}
+          onBack={() => { setStage('identity'); setRole(null); }}
+          onOpenPost={(p) => { setPost(p); setStage('post'); }}
+        />
+      ) : null}
+
+      {stage === 'post' && role && post ? (
+        <BlogPost
+          role={role}
+          post={post}
+          backLabel={role.title}
+          onBack={() => { setStage('role'); setPost(null); }}
+        />
+      ) : null}
+
+      {stage === 'blog' ? (
+        <BlogList
+          posts={publishedBlog}
+          onOpen={(p) => { setBlogPost(p); setStage('blogpost'); }}
+        />
+      ) : null}
+
+      {stage === 'blogpost' && blogPost ? (
+        <BlogPost
+          post={blogPost}
+          backLabel="All writing"
+          onBack={() => { setStage('blog'); setBlogPost(null); }}
+        />
+      ) : null}
+
+      {stage === 'about' ? (
+        <AboutPage onExplore={goPortfolio} />
+      ) : null}
+
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

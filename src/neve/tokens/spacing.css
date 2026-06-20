@@ -1,0 +1,18 @@
+/* NEVE — Spacing scale (4px base) */
+
+:root {
+  --space-0: 0px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 40px;
+  --space-section: 64px;
+  --space-page: 96px;
+
+  /* Layout */
+  --container-max: 1200px;
+  --container-prose: 680px;
+  --gutter: 24px;
+}
