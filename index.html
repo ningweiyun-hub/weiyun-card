@@ -2171,13 +2171,15 @@ function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
 /* Root                                                                  */
 /* ===================================================================== */
 function App() {
-  const [stage, setStage] = React.useState('intro'); // intro | question | identity | role | post | blog | blogpost | about | admin
+  // Restore the saved view on refresh / forward-nav (history.state survives reload).
+  const restored = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
+  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | admin
   const [source, setSource] = React.useState(null);
-  const [role, setRole] = React.useState(null);
-  const [post, setPost] = React.useState(null);          // open case study
-  const [blogPost, setBlogPost] = React.useState(null);  // open blog article
+  const [role, setRole] = React.useState(restored ? (restored.role || null) : null);
+  const [post, setPost] = React.useState(restored ? (restored.post || null) : null);          // open case study
+  const [blogPost, setBlogPost] = React.useState(restored ? (restored.blogPost || null) : null);  // open blog article
   const [scrolled, setScrolled] = React.useState(false);
-  const [answered, setAnswered] = React.useState(false); // questionnaire seen — skip it on return
+  const [answered, setAnswered] = React.useState(restored ? !['intro', 'question'].includes(restored.stage) : false); // questionnaire seen — skip it on return
   const [store, setStore] = React.useState(() => loadStore()); // localStorage content override
 
   // Effective (admin-edited or default) content; public views show only published.
@@ -2187,17 +2189,32 @@ function App() {
 
   const persist = (next) => { setStore(next); saveStore(next); };
 
-  const goPortfolio = () => { setStage('identity'); setRole(null); setPost(null); };
-  const goWelcome = () => { setStage('intro'); setRole(null); setPost(null); };
-  const goBlog = () => { setStage('blog'); setRole(null); setPost(null); setBlogPost(null); };
-  // From the welcome page: first time → questionnaire; afterwards → straight to the deck.
-  const enterFromWelcome = () => setStage(answered ? 'identity' : 'question');
-  const exitAdmin = () => {
-    if (typeof history !== 'undefined' && history.replaceState) {
-      history.replaceState(null, '', location.pathname + location.search);
-    }
-    setStage('identity');
+  // ---- Browser-history navigation -------------------------------------
+  // Each forward move pushes a history entry carrying a serializable snapshot
+  // of the view, so the browser's native Back/Forward (and refresh) work.
+  // Sections without sub-state (intro/identity/blog/about) de-dupe on re-click.
+  const SINGLETON = ['intro', 'identity', 'blog', 'about'];
+  const pushView = (next, patch = {}) => {
+    const { role: r = null, post: p = null, blogPost: bp = null } = patch;
+    setStage(next); setRole(r); setPost(p); setBlogPost(bp);
+    if (typeof history === 'undefined') return;
+    const cur = history.state;
+    if (cur && cur.stage === next && SINGLETON.includes(next)) return; // re-click same section
+    const depth = ((cur && cur.depth) || 0) + 1;
+    history.pushState({ stage: next, role: r, post: p, blogPost: bp, depth, _neve: true }, '');
   };
+  // On-page "back" buttons defer to the browser history so it stays in sync;
+  // if we're at the first entry (e.g. a deep-linked refresh) fall back explicitly.
+  const goBack = (fallbackStage, fallbackPatch) => {
+    if (typeof history !== 'undefined' && history.state && history.state.depth > 0) window.history.back();
+    else pushView(fallbackStage, fallbackPatch);
+  };
+
+  const goPortfolio = () => pushView('identity');
+  const goWelcome = () => pushView('intro');
+  const goBlog = () => pushView('blog');
+  // From the welcome page: first time → questionnaire; afterwards → straight to the deck.
+  const enterFromWelcome = () => pushView(answered ? 'identity' : 'question');
 
   // Track scroll of whichever stage's scroll container is active (scroll doesn't
   // bubble, so listen in the capture phase to catch any descendant scroller).
@@ -2208,6 +2225,21 @@ function App() {
   }, []);
   // New stage always starts at the top — reset the nav to transparent.
   React.useEffect(() => { setScrolled(false); }, [stage]);
+
+  // Seed a root history entry (only on a fresh visit) so the first Back leaves
+  // the site rather than getting stuck, and Back/Forward restore saved views.
+  React.useEffect(() => {
+    if (typeof history === 'undefined') return;
+    if (!(history.state && history.state._neve)) {
+      history.replaceState({ stage: 'intro', role: null, post: null, blogPost: null, depth: 0, _neve: true }, '');
+    }
+    const onPop = (e) => {
+      const s = (e.state && e.state._neve) ? e.state : { stage: 'intro', role: null, post: null, blogPost: null };
+      setStage(s.stage); setRole(s.role || null); setPost(s.post || null); setBlogPost(s.blogPost || null);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const chromeless = stage === 'intro';
 
@@ -2220,7 +2252,7 @@ function App() {
           onWordmark={goWelcome}
           onPortfolio={goPortfolio}
           onBlog={goBlog}
-          onAbout={() => { setStage('about'); }}
+          onAbout={() => pushView('about')}
         />
       ) : null}
 
@@ -2229,19 +2261,19 @@ function App() {
       </div>
 
       {stage === 'question' ? (
-        <QuestionCard onSubmit={(s) => { setSource(s); logSurvey(s); setAnswered(true); setStage('identity'); }} />
+        <QuestionCard onSubmit={(s) => { setSource(s); logSurvey(s); setAnswered(true); pushView('identity'); }} />
       ) : null}
 
       {stage === 'identity' ? (
-        <IdentityDeck onChoose={(r) => { setRole(r); setStage('role'); }} />
+        <IdentityDeck onChoose={(r) => pushView('role', { role: r })} />
       ) : null}
 
       {stage === 'role' && role ? (
         <RolePage
           role={role}
           projects={currentProjects}
-          onBack={() => { setStage('identity'); setRole(null); }}
-          onOpenPost={(p) => { setPost(p); setStage('post'); }}
+          onBack={() => goBack('identity')}
+          onOpenPost={(p) => pushView('post', { role, post: p })}
         />
       ) : null}
 
@@ -2250,14 +2282,14 @@ function App() {
           role={role}
           post={post}
           backLabel={role.title}
-          onBack={() => { setStage('role'); setPost(null); }}
+          onBack={() => goBack('role', { role })}
         />
       ) : null}
 
       {stage === 'blog' ? (
         <BlogList
           posts={publishedBlog}
-          onOpen={(p) => { setBlogPost(p); setStage('blogpost'); }}
+          onOpen={(p) => pushView('blogpost', { blogPost: p })}
         />
       ) : null}
 
@@ -2265,7 +2297,7 @@ function App() {
         <BlogPost
           post={blogPost}
           backLabel="All writing"
-          onBack={() => { setStage('blog'); setBlogPost(null); }}
+          onBack={() => goBack('blog')}
         />
       ) : null}
 
