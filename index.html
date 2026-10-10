@@ -4178,22 +4178,24 @@ To ensure the system remains maintainable and scalable, we introduced Storybook 
       cover: 'creative-harpist-cover.jpg',
       duo: ['#0F172A', '#B8B4D8'],
       tags: ['Generative art', 'Creative coding', 'Sound', 'Interaction'],
-      summary: 'A single web page where moving the cursor plays a harp: sweep up for brighter notes, down for deeper ones.',
+      summary: 'A web page where you play a harp by moving the mouse. Up for higher notes, down for lower ones.',
       blog: {
-        intro: `A one-page piece where the visitor does not press anything. The cursor is the plectrum: sweep it up and the notes rise, sweep it down and they fall. An angel plays above a city of clouds, and can be swapped for a crocodile, because the rule of the piece is that anyone can be the one playing.
+        intro: `There is nothing to click. You move the mouse and the harp plays. Move up and the notes get higher, move down and they drop. An angel plays above a city of clouds, and you can swap her for a crocodile.
 
-I built it end to end: the interaction, the sound mapping, the cut-out characters, and the page itself.`,
+I made all of it. The interaction, the sound, the cut-out characters, the page.`,
         sections: [
-          { h: 'The Interaction Had to Be the Whole Interface', p: `There is no play button and no instrument to aim at. The only control is the position of the cursor, and the only feedback is sound and light. That makes the first second of the page the entire design problem: a visitor who moves nothing hears nothing, so the page has to invite a movement before it explains anything.
+          { h: 'No Buttons, So the First Second Matters', p: `There is no play button and nothing to aim at. The only control is where your mouse is, and the only answer is sound. If you sit still you hear nothing and the page looks like a picture, so the first second has to make you move.
 
-The mapping is deliberately simple: vertical position selects the note, horizontal movement triggers it, so that anyone can work out the rule by accident, in about two seconds, without reading the line that explains it.` },
-          { type: 'video', src: 'harpist-demo.mp4', poster: 'creative-harpist-cover.jpg', caption: 'Moving the cursor across the clouds, and the harp follows the hand.' },
-          { h: 'Cutting the Player Out of the Picture', p: `The figures are AI-generated and then cut out frame by frame so they can float over a background that is not theirs. The first attempts fought me: a character generated inside its own painted scene brings that scene with it: sky, pillars, a cropped tail. No amount of matte tuning gets it out cleanly.
+I kept the rule simple. Height picks the note, moving sideways plays it. Most people work it out by accident in about two seconds, without reading the line that explains it.` },
+          { type: 'video', src: 'harpist-demo.mp4', poster: 'creative-harpist-cover.jpg', caption: 'Moving the mouse across the clouds. The harp follows.' },
+          { h: 'Getting the Player Out of the Picture', p: `The angel and the crocodile are AI-generated. I cut them out frame by frame so they can float over a background that is not theirs.
 
-The fix was upstream, not in the compositing: regenerate the character alone, full body, on a plain background. The angel came out cleanly that way, and the crocodile only worked once I stopped repairing the matte and asked for a different source image instead.` },
-          { h: 'Why This One Counts as Work', p: `Nobody commissioned this. It exists because I wanted to know whether a web page could feel like an instrument rather than a screen, and whether sound, motion and chance could carry a piece with no copy, no navigation and no call to action.
+The first tries went badly. A character generated inside its own painted scene drags that scene along with it. Sky, pillars, half a tail. I went through four rounds of fixing the edges and each round left something new to fix.
 
-What I would change next: the notes are currently a fixed scale, so the piece is always pleasant and never surprising. I would like the scale itself to drift over time, so a visitor who stays longer hears something a visitor who leaves after ten seconds never does.` },
+The real fix was further back. I asked for the character on its own, full body, plain background, and then it cut out cleanly. The angel worked that way first time. The crocodile only worked once I stopped repairing and asked for a new image.` },
+          { h: 'Why I Made It', p: `Nobody asked for this one. I wanted to know if a web page could feel like an instrument instead of a screen, and whether sound and movement on their own could hold someone there.
+
+The notes sit on a fixed scale, so it always sounds nice and never surprises you. Next I want the scale to drift, so someone who stays a while hears something the person who leaves after ten seconds does not.` },
         ],
         quote: null,
       },
@@ -5527,7 +5529,7 @@ function UnderConstruction() {
       <p style={{
         margin: 0, maxWidth: 460, fontFamily: 'var(--font-body)',
         fontSize: 'clamp(15px, 1.4vw, 17px)', lineHeight: 1.7, color: 'var(--text-secondary)',
-      }}>I am still writing this one. Come back soon.</p>
+      }}>Still writing this one. Come back soon.</p>
     </div>
   );
 }
@@ -5906,7 +5908,7 @@ const ROLES = [
     id: 'creative-technologist', num: '05', eyebrow: 'Generative art · creative coding',
     title: 'Creative Technologist',
     duo: ['#0F172A', '#B8B4D8'],
-    desc: 'I write art in code: generative visuals where systems, motion, and chance meet.',
+    desc: 'I write art in code. Systems, motion and a bit of chance, running in a browser.',
     link: 'https://openprocessing.org/@nevening/#sketches',
     linkLabel: 'See the sketches on OpenProcessing',
   },
@@ -6701,7 +6703,7 @@ const freshPost = (p, projects) => {
 function App() {
   // Restore the saved view on refresh / forward-nav (history.state survives reload).
   const restored = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
-  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | cv
+  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | cv | admin
   const [source, setSource] = React.useState(null);
   const [role, setRole] = React.useState(restored ? freshRole(restored.role || null) : null);
   const [post, setPost] = React.useState(restored ? freshPost(restored.post || null, effectiveRoleProjects(loadStore())) : null); // open case study
