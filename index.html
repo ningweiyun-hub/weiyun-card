@@ -318,10 +318,54 @@ div::-webkit-scrollbar { display: none; }
   .nav-links.open { display: flex; }
   .nav-links > button { width: 100%; text-align: left; padding: 11px 12px !important; border-radius: var(--radius-sm); }
   .nav-links > button:hover { background: var(--surface-hover); }
-  .nav-links > a { justify-content: center; margin-top: 6px; }
   /* The deck's prev/next arrows eat too much width on a phone, squeezing the
      card so it gets clipped. Hide them — the deck is swipeable by touch. */
   .deck-arrow { display: none !important; }
+}
+
+/* CV page ---------------------------------------------------------------- */
+/* Narrow screens: one column, and the note opens inline under the station.
+   Wide screens: the journey with the guide's note standing beside it;
+   widest: years down the left edge as well. */
+.cv-layout { display: block; }
+.cv-margin { display: none; }
+.cv-yearrail { display: none; }
+
+.cv-note-inline { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 360ms var(--ease-calm); }
+.cv-note-inline.open { grid-template-rows: 1fr; }
+.cv-note-inline > div { overflow: hidden; }
+
+@media (min-width: 1000px) {
+  .cv-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: clamp(26px, 3.4vw, 50px); align-items: stretch; }
+  /* stretch, not start: the column must be as tall as the journey or its
+     sticky note has nowhere to travel and scrolls out of view. */
+  .cv-margin { display: block; }
+  .cv-note-inline { display: none; }
+}
+@media (min-width: 1280px) {
+  .cv-layout { grid-template-columns: 58px minmax(0, 1fr) 320px; }
+  .cv-yearrail { display: block; }
+}
+
+/* A station is focusable so the keyboard can walk the journey too. */
+.cv-layout li:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 6px; border-radius: var(--radius-sm); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-note-inline { transition: none; }
+}
+
+/* CV page: the "still being written" drawing (see UnderConstruction). */
+@keyframes cvWipDraw { 0% { stroke-dashoffset: 116; } 40%, 100% { stroke-dashoffset: 0; } }
+@keyframes cvWipPop { 0%, 12% { transform: scale(0); opacity: 0; } 28%, 100% { transform: scale(1); opacity: 1; } }
+@keyframes cvWipRow { 0%, 16% { transform: scaleX(0); } 36%, 100% { transform: scaleX(1); } }
+.cv-wip-draw { stroke-dasharray: 116; animation: cvWipDraw 5s var(--ease-calm) infinite; }
+.cv-wip-node { transform-box: fill-box; transform-origin: center; animation: cvWipPop 5s var(--ease-calm) infinite; }
+.cv-wip-row { transform-box: fill-box; transform-origin: left center; animation: cvWipRow 5s var(--ease-calm) infinite; }
+.cv-wip-d1 { animation-delay: 0.5s; }
+.cv-wip-d2 { animation-delay: 1s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-wip-draw, .cv-wip-node, .cv-wip-row { animation: none; stroke-dashoffset: 0; transform: none; opacity: 1; }
 }
 </style>
 </head>
@@ -330,6 +374,9 @@ div::-webkit-scrollbar { display: none; }
 <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
 <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<!-- Map projection + country outlines for the welcome animation. -->
+<script crossorigin src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+<script crossorigin src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
 <script>
 /* @ds-bundle: {"format":3,"namespace":"NEVEDesignSystem_bf520b","components":[{"name":"Button","sourcePath":"components/actions/Button.jsx"},{"name":"IconButton","sourcePath":"components/actions/IconButton.jsx"},{"name":"Avatar","sourcePath":"components/display/Avatar.jsx"},{"name":"Card","sourcePath":"components/display/Card.jsx"},{"name":"Tabs","sourcePath":"components/display/Tabs.jsx"},{"name":"Badge","sourcePath":"components/feedback/Badge.jsx"},{"name":"Banner","sourcePath":"components/feedback/Banner.jsx"},{"name":"Tag","sourcePath":"components/feedback/Tag.jsx"},{"name":"Tooltip","sourcePath":"components/feedback/Tooltip.jsx"},{"name":"Checkbox","sourcePath":"components/forms/Checkbox.jsx"},{"name":"Input","sourcePath":"components/forms/Input.jsx"},{"name":"Radio","sourcePath":"components/forms/Radio.jsx"},{"name":"Select","sourcePath":"components/forms/Select.jsx"},{"name":"Switch","sourcePath":"components/forms/Switch.jsx"},{"name":"Textarea","sourcePath":"components/forms/Textarea.jsx"}],"sourceHashes":{"components/actions/Button.jsx":"2ff3e83c8bcd","components/actions/IconButton.jsx":"03dd0914dd78","components/display/Avatar.jsx":"6abaeec37c20","components/display/Card.jsx":"5fa439902b54","components/display/Tabs.jsx":"eab9ab338e70","components/feedback/Badge.jsx":"b054d6d4d465","components/feedback/Banner.jsx":"c5f3449167e0","components/feedback/Tag.jsx":"20c76d21230c","components/feedback/Tooltip.jsx":"be75c68116bf","components/forms/Checkbox.jsx":"2c40a1ff8156","components/forms/Input.jsx":"638cc0a9c0ba","components/forms/Radio.jsx":"8fcb4c1db681","components/forms/Select.jsx":"64bb322eddba","components/forms/Switch.jsx":"40671b28601c","components/forms/Textarea.jsx":"7634254c6d12","ui_kits/kit-runtime.js":"239039e804e6","ui_kits/portfolio/About.jsx":"52cd7890e18a","ui_kits/portfolio/CaseStudy.jsx":"2cfdceba3560","ui_kits/portfolio/Footer.jsx":"be3779d8cbd3","ui_kits/portfolio/Home.jsx":"d05922d24335","ui_kits/portfolio/Icons.jsx":"3a257deb14d6","ui_kits/portfolio/Nav.jsx":"88afbb68f817","ui_kits/portfolio/PortfolioApp.jsx":"bfbc5ae0746b","ui_kits/portfolio/Work.jsx":"a55046c1c531","ui_kits/portfolio/data.jsx":"0caff66f1986","ui_kits/studio/Inquiries.jsx":"0b76b5ba3885","ui_kits/studio/Overview.jsx":"05ae081942ce","ui_kits/studio/Projects.jsx":"b11f3bc13f16","ui_kits/studio/Sidebar.jsx":"7625f9b54dae","ui_kits/studio/StudioApp.jsx":"2e68b24087a3","ui_kits/studio/Topbar.jsx":"3354383ed378","ui_kits/studio/data.jsx":"76976cedac87","ui_kits/studio/icons.jsx":"62fbccfaddbb"},"inlinedExternals":[],"unexposedExports":[]} */
 
@@ -3533,7 +3580,7 @@ const coverSrc = (cover) => (!cover ? '' : (cover.startsWith('data:') ? cover : 
 const SURVEY_KEY = 'weiyun_survey_v1';
 const SURVEY_OPTIONS = [
   { id: 'friend', label: 'A friend told me' },
-  { id: 'work', label: 'Through work — a colleague or client' },
+  { id: 'work', label: 'Through work, a colleague or client' },
   { id: 'linkedin', label: 'LinkedIn' },
   { id: 'search', label: 'Found it searching' },
   { id: 'else', label: 'Somewhere else entirely' },
@@ -3575,7 +3622,7 @@ const ABOUT = {
   // Intro paragraphs. Wrap key phrases in ==double equals== to highlight them.
   intro: [
     `I'm a ==Senior Product Designer== and ==design lead== with ==7+ years== of experience taking products from an unclear starting point to something people can actually use.`,
-    `My work is mostly ==0→1 products and complex operational systems== — ==EdTech, e-learning, B2B platforms==, and internal tools — where no established workflow exists yet, and different teams need different things from the same product. Design systems are how I keep that work consistent as it scales.`,
+    `My work is mostly ==0→1 products and complex operational systems== in ==EdTech, e-learning, B2B platforms==, and internal tools, where no established workflow exists yet, and different teams need different things from the same product. Design systems are how I keep that work consistent as it scales.`,
     `I work fluently in ==Figma==, and I build with ==Claude Code and Cursor==, so ideas get tested as working prototypes instead of staying in mockups.`,
     `Beyond product work, I'm exploring the intersection of ==art, AI, and code==.`,
   ],
@@ -3590,18 +3637,262 @@ const CONTACT = {
     items: [
       { type: 'email', label: 'ningweiyun@gmail.com', value: 'ningweiyun@gmail.com' },
       { type: 'linkedin', label: 'LinkedIn', value: 'https://www.linkedin.com/in/weiyun-ning/' },
+      { type: 'link', label: 'OpenProcessing', value: 'https://openprocessing.org/@nevening/#sketches' },
       { type: 'phone', label: '+31 638276409', value: '+31638276409' },
       { type: 'text', label: 'Netherlands', value: 'Netherlands' },
     ],
   },
   studio: {
-    heading: 'Cord n Yarn — knitting studio',
+    heading: 'Cord n Yarn knitting studio',
     note: 'Welcome to join a workshop in Amsterdam and Rotterdam.',
     items: [
       { type: 'instagram', label: '@cord.n.yarn', value: 'https://www.instagram.com/cord.n.yarn' },
       { type: 'email', label: 'w.knitting.n@gmail.com', value: 'w.knitting.n@gmail.com' },
     ],
   },
+};
+
+/* ── CV page ──────────────────────────────────────────────────────────────
+   Drives the in-site CV page (nav → "CV"). This is not a PDF replacement —
+   it is a guided read: every station on the journey carries Weiyun's own
+   note explaining what that line actually means.
+
+   The journey is deliberately gap-free (German-CV style): work, study, side
+   roles and moves all sit on one timeline. Order is NEWEST FIRST — the reader
+   starts at today and walks back to university in 2013.
+
+   Flags:
+   - `todo: true`  → the facts are unconfirmed; the page shows a "to confirm"
+                     badge. Fill it in and delete the flag.
+   - `draft: true` → the note is Claude's draft, not Weiyun's voice yet. The
+                     page marks it quietly; delete the flag once rewritten.
+
+   `kind` drives how a station is drawn:
+     'work'  main employment (big node, on the spine)
+     'study' education (big node, on the spine)
+     'side'  parallel/side role (small node, indented)
+     'build' self-directed building (small node, indented)
+     'move'  relocation marker (thin node, no body text)
+     'gap'   an unexplained period that still needs a line */
+const CV = {
+  // NOT rendered right now — the page opens straight into the walk.
+  // Kept here so the intro can come back without rewriting it.
+  eyebrow: 'Curriculum vitae',
+  /* Hide the timeline behind a "still being written" screen. Set this to
+     false (or delete the line) and the full journey comes straight back —
+     nothing below is removed while it is on. */
+  underConstruction: true,
+  title: 'Senior Product Designer · Creative Technologist',
+  location: 'Netherlands',
+  // Also not rendered right now (see above). ==marked== = highlighter span.
+  summary: [
+    `Senior Product Designer with ==7+ years== designing digital products. I translate ==complex workflows== into simple and intuitive experiences, and I use ==AI agents (Claude Code, Cursor)== to prototype, validate and ship instead of only describing.`,
+    `Below is the ==complete version==, walked backwards: from what I'm building today all the way to ==where it started in 2013==. Every year is accounted for, side roads included. Hover any line and I'll tell you what it actually meant.`,
+  ],
+  // The invitation shown in the margin before anything is hovered.
+  noteIdle: 'Hover a line and I’ll tell you what it actually means.',
+  noteLabel: 'What this actually means',
+
+  journey: [
+    {
+      id: 'building', kind: 'build',
+      period: '2025 — now',
+      role: 'AI-assisted building',
+      org: 'Self-directed · built with Claude Code + Cursor',
+      place: 'Amsterdam',
+      current: true,
+      points: [
+        'Used AI agents to prototype, validate and ship full product experiences.',
+        'Turned ambiguity into structure, from concept to working product.',
+      ],
+      cases: ['86400-ai-planning', 'workshop-management-system', 'small-talk-boxes'],
+      note: `This is where I stopped describing products and started building them. With Claude Code and Cursor a prototype is a working thing by Friday, not a clickable illusion, so I can test an idea on a real person instead of defending it in a meeting.`,
+      draft: true,
+    },
+    {
+      id: 'cord-n-yarn', kind: 'build',
+      period: '2025 — now',
+      role: 'Founder & workshop designer',
+      org: 'Cord n Yarn knitting studio',
+      place: 'Amsterdam & Rotterdam',
+      current: true,
+      points: [
+        'Knitting, crochet and macramé workshops for beginners.',
+        'Designed the learning journey, not only the object.',
+      ],
+      cases: ['handcraft-studio'],
+      note: `The part of me that needs to touch the material. It is also why I built my own admin tool: running workshops is operations, and I was the one drowning in it.`,
+      draft: true,
+    },
+    {
+      id: 'move-nl', kind: 'move', draft: true,
+      period: 'Dec 2025',
+      role: 'Moved to the Netherlands',
+      org: 'Amsterdam',
+      place: 'Netherlands',
+      note: `The second time I moved here, and the first time I chose it. Everything below this line happened in another country, which is why I read job markets, not just job descriptions.`,
+    },
+    {
+      id: 'elwp', kind: 'side',
+      period: 'Nov 2024 — Jun 2025',
+      role: 'UX Researcher & Product Designer',
+      org: 'East London Waterworks Park (project)',
+      place: 'London, UK',
+      points: [
+        'Shipped product improvements based on user research and user behaviour.',
+        'Maintained the Figma design system for coherent cross-platform experiences.',
+      ],
+      note: `Volunteer-run, no budget, everyone part-time. Constraints like that teach you to ship the small correct thing this month instead of the big beautiful thing never.`,
+      draft: true,
+    },
+    {
+      id: 'crypto-arsenal', kind: 'side',
+      period: 'Mar 2024 — Sep 2024',
+      role: 'Web3 Marketing Researcher',
+      org: 'Crypto-Arsenal',
+      place: '',
+      points: [
+        'Analysed data and user behaviour in digital content ecosystems.',
+        'Translated findings into strategic frameworks.',
+      ],
+      note: `A side road, and a useful one. I wanted to see how people behave when money and hype sit inside the same product. It made me far more careful about what a "conversion" number is actually telling me.`,
+      draft: true,
+    },
+    {
+      id: 'hsinfei', kind: 'work',
+      period: 'Nov 2022 — Nov 2025',
+      place: 'Remote, from the UK',
+      role: 'Senior Product Designer → Design Lead',
+      org: 'Hsinfei International',
+      groups: [
+        {
+          heading: 'Product design',
+          points: [
+            'Owned product features from discovery through implementation, translating complex workflows into simple and intuitive experiences.',
+            'Designed user journeys, wireframes, prototypes and polished interfaces; validated ideas through testing, experimentation and iteration.',
+            'Increased conversion by 30% and retention by 22%; led product strategy and roadmap discussions.',
+          ],
+        },
+        {
+          heading: 'Design systems',
+          points: [
+            'Evolved and maintained the design system, defining components, patterns and design tokens.',
+            'Partnered with engineers on implementation quality, designing across mobile (iOS, Android) and web.',
+          ],
+        },
+        {
+          heading: 'Ownership & collaboration',
+          points: [
+            'Drove end-to-end delivery of key projects, challenging assumptions while staying open in decision-making.',
+            'Committed to craft, while making pragmatic decisions about when to ship.',
+          ],
+        },
+      ],
+      cases: ['redefining-users-workflows', 'lean-design-system', 'ohyoung-b2b-crm', 'bi-dashboard', 'why-design-system-matters'],
+      note: `Three years, one company, several products. I arrived as the person who drew the screens and left as the person deciding which screens were worth drawing. The 30% is the honest part: it moved because I went to watch where people gave up, not because the UI got prettier.`,
+      draft: true,
+    },
+    {
+      id: 'move-uk-back', kind: 'move', draft: true,
+      period: 'Aug 2022',
+      role: 'Moved back to the UK',
+      org: '',
+      place: 'United Kingdom',
+      note: `Back from the exchange to finish the degree. Two countries in one academic year sounds restless; it was mostly logistics, visas and suitcases, the unglamorous part of moving that never fits on a CV line.`,
+    },
+    {
+      id: 'exchange-nl', kind: 'move', draft: true,
+      period: 'Jan 2022',
+      role: 'Exchange semester in the Netherlands',
+      org: 'Amsterdam University of Applied Sciences',
+      place: 'Netherlands',
+      note: `My first go at living in Amsterdam, four years before I moved here for good. A Dutch reader stops on this line: it says I did not pick this country off a map.`,
+    },
+    {
+      id: 'ambassador', kind: 'side',
+      period: 'Apr 2021 — Aug 2022',
+      role: 'Student Ambassador',
+      org: 'Bournemouth University',
+      place: 'Bournemouth, UK',
+      points: [
+        'Communication and collaboration across diverse audiences.',
+        'Content and community experiences.',
+      ],
+      note: `Mostly translation work: saying the same thing three different ways until the person in front of me actually got it. I do the same thing in design reviews now, just with engineers.`,
+      draft: true,
+    },
+    {
+      id: 'msc', kind: 'study',
+      period: 'Jan 2021 — 2022',
+      role: 'MSc Events Management',
+      org: 'Bournemouth University',
+      place: 'Bournemouth, UK',
+      points: ['Graduated 2022.'],
+      note: `It sounds like I studied how to throw parties. It is operations with a deadline that cannot move: hundreds of moving parts, many owners, one date. That is the same muscle a 0→1 product needs when no workflow exists yet.`,
+      draft: true,
+    },
+    {
+      id: 'landing-uk', kind: 'life', draft: true,
+      period: 'Oct 2020 — Dec 2020',
+      role: 'Language school, and travelling',
+      org: '',
+      place: 'United Kingdom',
+      note: `A few weeks of language school and then travelling until the course started in January. It was the middle of the pandemic, so there was not a great deal else to do, and I would rather spend that time learning the country than waiting in it.`,
+    },
+    {
+      id: 'move-uk', kind: 'move', draft: true,
+      period: 'Oct 2020',
+      role: 'Moved to the UK',
+      org: 'Bournemouth',
+      place: 'United Kingdom',
+      note: `Left the die-casting job in August, landed in October. This is the point where the CV stops being about one industry in one country.`,
+    },
+    {
+      id: 'shinwang', kind: 'work', draft: true,
+      period: 'Aug 2017 — Aug 2020',
+      role: 'Brand & System Designer',
+      org: 'ShinWang Die Casting Industrial Co., Ltd',
+      place: 'Taiwan',
+      points: [
+        'Visual and interaction design across four international product launches.',
+        'Improved efficiency by 15% through standardised design execution.',
+      ],
+      note: `My first job was designing for an industry that does not care about design. Four markets, four launches, one visual language that had to survive all of them. Nobody called it a design system yet, but that is exactly what it was.`,
+    },
+    {
+      id: 'undergrad', kind: 'study', draft: true,
+      period: 'Sep 2013 — Jun 2017',
+      role: 'BSc in Cosmeceutics',
+      org: 'China Medical University',
+      place: 'Taichung, Taiwan',
+      points: ['Cosmetic formulation, analysis and safety evaluation: a science degree, not a design one.'],
+      note: `Where the road starts, and it starts in a lab. Formulation, analysis, safety testing: four years of being taught that a claim without evidence is just a claim. I came to design later, but I brought that with me, which is why I go and watch where people fail instead of arguing about taste.`,
+    },
+  ],
+
+  /* Core expertise, kept as the CV's closing section. */
+  expertise: [
+    {
+      heading: 'Product design',
+      items: ['Discovery through implementation', 'Complex → simple and intuitive', 'User journeys, wireframes, prototypes', 'Pain points and opportunities', 'Testing, experimentation, iteration', 'Product strategy and roadmap'],
+    },
+    {
+      heading: 'Design systems',
+      items: ['Components, patterns, design tokens', 'Consistency across a growing ecosystem', 'Figma: components, variables, auto layout, prototyping', 'High-quality implementation with engineers', 'Mobile (iOS / Android) + web'],
+    },
+    {
+      heading: 'AI & tools',
+      items: ['AI agents (Claude Code, Cursor)', 'Prototype, validate, ship', 'AI-powered products', 'Data-heavy platforms', 'HTML, CSS, front-end basics'],
+    },
+    {
+      heading: 'Working style',
+      items: ['Takes ownership', 'Turns fragmented ideas into structure', 'Open-minded decision-making', 'Balances quality with practicality', 'Complex and ambiguous problems', 'Cross-functional collaboration'],
+    },
+  ],
+  languages: [
+    { name: 'English', level: 'Fluent' },
+    { name: 'Mandarin', level: 'Native' },
+  ],
 };
 
 /* Shared cases — each appears in both the Product and Research decks (one source, no copies). */
@@ -3654,7 +3945,7 @@ const REDEFINING_CASE = {
       { h: 'How many users are there, really?', p: `The primary pain point of the legacy product was that, despite completing the first phase of development, users were still unable to use it "normally." The workflows didn't align with their actual needs; specifically, the course selection logic was incompatible with existing academic processes, making it unusable for students.
 
 Initially, the team identified only two user roles: internal staff and students. The product was narrowly defined as a simple E-learning system where students booked classes and staff managed orders and schedules.` },
-      { h: 'User Research & Product Evolution', p: `Through stakeholder interviews and requirement grooming with the marketing team, I discovered a significant "alignment gap" — every department had a different understanding of the product's core purpose.
+      { h: 'User Research & Product Evolution', p: `Through stakeholder interviews and requirement grooming with the marketing team, I discovered a significant "alignment gap": every department had a different understanding of the product's core purpose.
 
 Following deep-dive research and cross-functional discussions, I redefined the system to support five distinct user roles for the Phase 1 launch. This shifted the product's identity from a basic E-learning tool to a sophisticated hybrid system combining E-learning and CRM (Customer Relationship Management).` },
       { type: 'image', src: 'ux-redefining-users-and-workflows-3.jpg' },
@@ -3760,12 +4051,12 @@ I restructured the original design system, streamlining convoluted settings and 
         sections: [
           { h: 'The Challenges: Former System', p: `The previous design system relied on three distinct sets of assets for different devices. This fragmented approach caused confusion, as even the color specifications became inconsistent between the mobile and web versions, making it difficult to maintain brand unity.` },
           { type: 'image', src: 'product-creating-a-lean-design-system-2.jpg' },
-          { h: 'Confusion for Developers', p: `While attempting to accelerate the development process, we discovered that the fragmented button components caused significant visual inconsistencies in the frontend. I had to invest considerable time auditing existing styles while ensuring new designs remained backward-compatible — all while managing the high-pressure timeline set by leadership and engineering.` },
-          { h: 'Buttons First', p: `Following a period of cross-functional alignment, I rebuilt the system into a leaner version, starting with the button library — the most-used elements first.` },
+          { h: 'Confusion for Developers', p: `While attempting to accelerate the development process, we discovered that the fragmented button components caused significant visual inconsistencies in the frontend. I had to invest considerable time auditing existing styles while ensuring new designs remained backward-compatible, all while managing the high-pressure timeline set by leadership and engineering.` },
+          { h: 'Buttons First', p: `Following a period of cross-functional alignment, I rebuilt the system into a leaner version, starting with the button library, the most-used elements first.` },
           { type: 'image', src: 'product-creating-a-lean-design-system-5.jpg' },
           { h: 'Storybook as the Shared Source of Truth', p: `After revamping the design system, development got faster, allowing engineers to build interfaces more efficiently. On the design side, this standardized framework enables me to produce high-fidelity prototypes much faster, ensuring that we can iterate and validate ideas with minimal overhead.
 
-To ensure the system remains maintainable and scalable, we introduced Storybook as our single source of truth. This prevents the creation of "redundant variants" — such as "twin buttons" with slight, unauthorized differences. By implementing Storybook, design and code now match, and both teams can build and test components in isolation.` },
+To ensure the system remains maintainable and scalable, we introduced Storybook as our single source of truth. This prevents the creation of "redundant variants" such as "twin buttons" with slight, unauthorized differences. By implementing Storybook, design and code now match, and both teams can build and test components in isolation.` },
         ],
         quote: null,
       },
@@ -3876,6 +4167,38 @@ To ensure the system remains maintainable and scalable, we introduced Storybook 
     },
   ],
 
+  'creative-technologist': [
+    {
+      /* Copy below is a DRAFT in Claude's words — the facts are right, the
+         voice is not Weiyun's yet. */
+      id: 'harpist-above-the-clouds',
+      title: 'Making the Cursor the Instrument',
+      project: 'The Harpist Above the Clouds',
+      year: '2026',
+      cover: 'creative-harpist-cover.jpg',
+      duo: ['#0F172A', '#B8B4D8'],
+      tags: ['Generative art', 'Creative coding', 'Sound', 'Interaction'],
+      summary: 'A single web page where moving the cursor plays a harp: sweep up for brighter notes, down for deeper ones.',
+      blog: {
+        intro: `A one-page piece where the visitor does not press anything. The cursor is the plectrum: sweep it up and the notes rise, sweep it down and they fall. An angel plays above a city of clouds, and can be swapped for a crocodile, because the rule of the piece is that anyone can be the one playing.
+
+I built it end to end: the interaction, the sound mapping, the cut-out characters, and the page itself.`,
+        sections: [
+          { h: 'The Interaction Had to Be the Whole Interface', p: `There is no play button and no instrument to aim at. The only control is the position of the cursor, and the only feedback is sound and light. That makes the first second of the page the entire design problem: a visitor who moves nothing hears nothing, so the page has to invite a movement before it explains anything.
+
+The mapping is deliberately simple: vertical position selects the note, horizontal movement triggers it, so that anyone can work out the rule by accident, in about two seconds, without reading the line that explains it.` },
+          { type: 'video', src: 'harpist-demo.mp4', poster: 'creative-harpist-cover.jpg', caption: 'Moving the cursor across the clouds, and the harp follows the hand.' },
+          { h: 'Cutting the Player Out of the Picture', p: `The figures are AI-generated and then cut out frame by frame so they can float over a background that is not theirs. The first attempts fought me: a character generated inside its own painted scene brings that scene with it: sky, pillars, a cropped tail. No amount of matte tuning gets it out cleanly.
+
+The fix was upstream, not in the compositing: regenerate the character alone, full body, on a plain background. The angel came out cleanly that way, and the crocodile only worked once I stopped repairing the matte and asked for a different source image instead.` },
+          { h: 'Why This One Counts as Work', p: `Nobody commissioned this. It exists because I wanted to know whether a web page could feel like an instrument rather than a screen, and whether sound, motion and chance could carry a piece with no copy, no navigation and no call to action.
+
+What I would change next: the notes are currently a fixed scale, so the piece is always pleasant and never surprising. I would like the scale itself to drift over time, so a visitor who stays longer hears something a visitor who leaves after ten seconds never does.` },
+        ],
+        quote: null,
+      },
+    },
+  ],
   knit: [
     {
       id: 'crochet-bag-collection',
@@ -3920,13 +4243,6 @@ To ensure the system remains maintainable and scalable, we introduced Storybook 
 /* Coming-soon identities (rendered as non-clickable cards after the deck). */
 const COMING_SOON = [
   {
-    id: 'creative-technologist',
-    title: 'Creative Technologist',
-    eyebrow: 'Generative art · creative coding',
-    duo: ['#0F172A', '#B8B4D8'],
-    desc: 'I write art in code — generative visuals where systems, motion, and chance meet.',
-  },
-  {
     id: 'podcaster',
     title: 'Podcaster',
     eyebrow: 'Story sharing · personal experience',
@@ -3950,11 +4266,11 @@ const DEFAULT_BLOG = [
     summary: 'A short note on how pairing with AI changed the kind of side projects I take on.',
     published: false,
     blog: {
-      intro: `This is your blog — a place for side projects, experiments, and notes that don't belong in a polished case study.
+      intro: `This is your blog, a place for side projects, experiments, and notes that don't belong in a polished case study.
 
 Write freely here. The same formatting as the case studies works: leave a blank line between paragraphs, and start a line with "• " to make a bullet.`,
       sections: [
-        { h: 'A small experiment', p: `Replace this with the story of something you made or learned recently — what you tried, what surprised you, what you'd do differently.` },
+        { h: 'A small experiment', p: `Replace this with the story of something you made or learned recently: what you tried, what surprised you, what you'd do differently.` },
       ],
       quote: null,
     },
@@ -3965,7 +4281,7 @@ Write freely here. The same formatting as the case studies works: leave a blank 
     year: '2025',
     duo: ['#E07A5F', '#F2C48D'],
     tags: ['Knitting', 'Process'],
-    summary: 'An unpublished example — flip its publish toggle in the admin to show how visibility works.',
+    summary: 'An unpublished example. Flip its publish toggle in the admin to show how visibility works.',
     published: false,
     blog: {
       intro: `This second post is left unpublished on purpose, so you can see how the admin publish toggle hides a draft from visitors while keeping it editable.`,
@@ -4019,244 +4335,301 @@ function ImageSlot({ placeholder = 'Add a cover image', radius = 14, aspectRatio
   );
 }
 
-/* Welcome canvas — fusing colour blocks. Soft brand-coloured blobs drift across
-   the paper, bounce off the edges, and gently pull together when they overlap so
-   they read as merging, irregular blocks. Every second each blob gets a small
-   random impulse so the motion never settles. Clicking pushes the nearby blocks
-   outward. Palette is the NEVE design system. */
+/* JourneyMap — the welcome screen: a 22-second looping flight from Taipei to
+   Bournemouth, Amsterdam, Manchester and Rotterdam, with the camera pushing
+   into Europe and every visited country tinting blue.
 
-function ParticleFigure({ onEnter }) {
-  const canvasRef = React.useRef(null);
-  const [revealed, setRevealed] = React.useState(false);
-  const [armed, setArmed] = React.useState(false);
-  const blobsRef = React.useRef([]);
-  const clickRef = React.useRef(null);
+   Ported from the design handoff (design_handoff_journey_map). The handoff's
+   own harness is not used: every frame is a pure function of the loop time T,
+   driven by one requestAnimationFrame clock. d3 and topojson come from the
+   same CDN as React; if either fails to load, the copy still renders over the
+   plain ivory background. */
 
-  const { Button } = window.NEVEDesignSystem_bf520b || {};
+const W = 1920, H = 1080;
+const C = {
+  ink: '#0F172A', ink400: '#64748B', ivory: '#F7F5F2',
+  stone: '#E5E7EB', white: '#FFFFFF', clay: '#E07A5F', dust: '#4C6B8A',
+};
+const SANS = 'Inter, system-ui, sans-serif';
 
-  // NEVE palette (rgb triplets), weighted warm + calm; ink used sparingly for depth.
-  const PALETTE = [
-    '76,107,138',   // dust-blue
-    '184,180,216',  // soft-lavender
-    '224,122,95',   // clay-orange
-    '242,196,141',  // muted-amber
-    '107,127,107',  // moss-green
-    '30,41,59',     // ink-700 (depth)
-  ];
+/* ---- timeline ---------------------------------------------------------- */
+const SECTIONS = [
+  { name: 'Taiwan', dur: 3 },
+  { name: 'Bournemouth', dur: 5 },
+  { name: 'Amsterdam', dur: 3.5 },
+  { name: 'Manchester', dur: 3.5 },
+  { name: 'Rotterdam', dur: 3.5 },
+  { name: 'Ending', dur: 3.5 },
+];
+const TOTAL = SECTIONS.reduce((a, s) => a + s.dur, 0); // 22s
+const SPANS = (() => {
+  const out = {}; let t = 0;
+  SECTIONS.forEach((s) => { out[s.name] = [t, t + s.dur]; t += s.dur; });
+  return out;
+})();
 
-  function handleClick(e) {
-    const c = canvasRef.current;
-    if (!c) return;
-    const r = c.getBoundingClientRect();
-    clickRef.current = { x: e.clientX - r.left, y: e.clientY - r.top };
+const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+const easeOutCubic = (k) => 1 - Math.pow(1 - k, 3);
+const easeInOutQuad = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+const easeInOutCubic = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+/* value of one tween at time T */
+const tween = (start, end, ease) => (T) => ease(clamp01((T - start) / Math.max(end - start, 1e-6)));
+/* piecewise keyframes: times[] → values[] */
+const interpolate = (times, values, ease) => (T) => {
+  if (T <= times[0]) return values[0];
+  for (let i = 1; i < times.length; i++) {
+    if (T <= times[i]) {
+      const k = ease(clamp01((T - times[i - 1]) / (times[i] - times[i - 1])));
+      return values[i - 1] + (values[i] - values[i - 1]) * k;
+    }
+  }
+  return values[values.length - 1];
+};
+
+/* ---- geography --------------------------------------------------------- */
+const STOPS = [
+  { id: 'tpe', city: '', iso: '158', lon: 121.56, lat: 25.03, dx: 16, dy: 8, anchor: 'start' },
+  { id: 'bou', city: 'Bournemouth', iso: '826', lon: -1.88, lat: 50.72, dx: 0, dy: 30, anchor: 'middle' },
+  { id: 'ams', city: 'Amsterdam', iso: '528', lon: 4.90, lat: 52.37, dx: 18, dy: -16, anchor: 'start' },
+  { id: 'man', city: 'Manchester', iso: '826', lon: -2.24, lat: 53.48, dx: -18, dy: -16, anchor: 'end' },
+  { id: 'rtm', city: 'Rotterdam', iso: '528', lon: 4.48, lat: 51.92, dx: 18, dy: 28, anchor: 'start' },
+];
+const N = 64;
+const lerp = (a, b, k) => a + (b - a) * k;
+const lerpP = (a, b, k) => [lerp(a[0], b[0], k), lerp(a[1], b[1], k)];
+
+/* Everything below needs d3; built once, when the library is there. */
+function buildGeo() {
+  const d3 = window.d3;
+  if (!d3 || !d3.geoNaturalEarth1) return null;
+  const proj = d3.geoNaturalEarth1().fitSize([W, H], { type: 'Sphere' });
+  const geoPath = d3.geoPath(proj);
+  const P = (s) => proj([s.lon, s.lat]);
+  const sampleArc = (a, b) => {
+    const ip = d3.geoInterpolate([a.lon, a.lat], [b.lon, b.lat]);
+    const out = [];
+    for (let i = 0; i <= N; i++) out.push(proj(ip(i / N)));
+    return out;
+  };
+  const legs = STOPS.slice(1).map((to, i) => ({
+    from: STOPS[i], to, section: SECTIONS[i + 1].name, pts: sampleArc(STOPS[i], to),
+  }));
+  const TPE = P(STOPS[0]);
+  const EU = [1, 2, 3, 4].map((i) => P(STOPS[i]))
+    .reduce((acc, p) => [acc[0] + p[0] / 4, acc[1] + p[1] / 4], [0, 0]);
+  return {
+    geoPath, P, legs, TPE, EU,
+    sphereD: geoPath({ type: 'Sphere' }),
+    WORLD: [W / 2, H / 2],
+    C0: lerpP([W / 2, H / 2], TPE, 0.35),
+  };
+}
+
+const legWindow = (leg) => { const [s, e] = SPANS[leg.section]; return [s + 0.4, e - 0.7]; };
+
+/* Where the plane is, which way it points, how much of each leg is drawn. */
+function runnerState(T, geo) {
+  let pos = geo.TPE, angle = -30, running = false;
+  const legK = [];
+  geo.legs.forEach((leg) => {
+    const [rs, re] = legWindow(leg);
+    if (T < rs) { legK.push(0); return; }
+    const k = easeInOutQuad(clamp01((T - rs) / Math.max(re - rs, 1e-6)));
+    legK.push(k);
+    const idx = k * N, i0 = Math.min(N - 1, Math.floor(idx)), i1 = i0 + 1;
+    pos = lerpP(leg.pts[i0], leg.pts[i1], idx - i0);
+    angle = Math.atan2(leg.pts[i1][1] - leg.pts[i0][1], leg.pts[i1][0] - leg.pts[i0][0]) * 180 / Math.PI;
+    if (T > rs && T < re) running = true;
+  });
+  return { pos, angle, running, legK };
+}
+
+/* The camera is just a viewBox: zoom keyframes plus a centre that hands off
+   from Taiwan to the plane to the European cluster. */
+function camera(T, run, geo) {
+  const [t0, t1] = SPANS.Taiwan, [b0, b1] = SPANS.Bournemouth, [e0, e1] = SPANS.Ending;
+  const z = interpolate([t0, t1, b1, e0, e1], [1.25, 1.6, 12, 12.8, 9.5], easeInOutCubic)(T);
+  const k1 = tween(b0, b0 + (b1 - b0) * 0.6, easeInOutCubic)(T);
+  const k2 = tween(b0 + (b1 - b0) * 0.65, b1, easeInOutCubic)(T);
+  const k3 = tween(e0, e1, easeInOutCubic)(T);
+  const euTarget = lerpP(lerpP(geo.EU, run.pos, 0.15), geo.EU, k3);
+  const c = lerpP(lerpP(geo.C0, run.pos, k1), euTarget, k2);
+  return { z, cx: c[0], cy: c[1] + (0.09 * H) / z };
+}
+
+/* Side-view plane with a passenger, drawn nose-right and mirrored going west. */
+function Plane({ angle, running, phase }) {
+  const lift = running ? 18 : 0;
+  const wobble = running ? Math.sin(phase) * 1.5 : 0;
+  const facing = Math.cos(angle * Math.PI / 180) >= 0 ? 1 : -1;
+  let tilt = facing === 1 ? angle : angle - 180;
+  if (tilt < -180) tilt += 360;
+  tilt = Math.max(-25, Math.min(25, tilt));
+  const halo = { fill: 'none', stroke: C.white, strokeWidth: 3.5, strokeLinejoin: 'round' };
+  const fuselage = 'M-17 -3.2 H9 Q17 -3.2 19 0 Q17 3.2 9 3.2 H-17 Q-20 0 -17 -3.2 Z';
+  const fin = 'M-17 -3 L-13 -12 L-8 -12 L-9 -3 Z';
+  const wing = 'M1 2.5 L-7 10 L-1 10 L6 2.5 Z';
+  const torso = 'M-3.6 -3 L-3 -11 Q0 -13 3 -11 L3.6 -3 Z';
+  return (
+    <g>
+      <ellipse cx="0" cy="0" rx={running ? 12 : 8} ry={running ? 4 : 3} fill={C.ink} opacity={running ? 0.1 : 0.14} />
+      <g transform={`translate(0 ${-lift + wobble}) rotate(${tilt}) scale(${facing} 1) scale(1.15)`}>
+        <g {...halo}>
+          <path d={wing} /><path d={fin} /><path d={fuselage} />
+          <path d={torso} transform="translate(2 0)" /><circle cx="2" cy="-15.5" r="3.6" />
+        </g>
+        <path d={wing} fill={C.ink400} />
+        <path d={fin} fill={C.ink} />
+        <path d={fuselage} fill={C.ink} />
+        <circle cx="9" cy="-0.6" r="1.1" fill={C.white} />
+        <path d={torso} fill={C.clay} transform="translate(2 0)" />
+        <circle cx="2" cy="-15.5" r="3.6" fill={C.ink} />
+      </g>
+    </g>
+  );
+}
+
+/* Pins and labels are drawn in screen pixels so the camera cannot inflate them. */
+function Pin({ stop, at, T, z, P }) {
+  const s = easeOutCubic(clamp01((T - at) / 0.5));
+  const o = easeOutCubic(clamp01((T - at - 0.15) / 0.45));
+  if (s <= 0) return null;
+  const [x, y] = P(stop);
+  return (
+    <g transform={`translate(${x} ${y}) scale(${1 / z})`}>
+      <circle r={10 * s} fill={C.white} />
+      <circle r={6 * s} fill={C.clay} />
+      {stop.city ? (
+        <g opacity={o} transform={`translate(${stop.dx} ${stop.dy})`}>
+          <text textAnchor={stop.anchor} fontFamily={SANS} fontSize="13" fontWeight="500"
+            fill={C.ink400} letterSpacing="0.4">{stop.city}</text>
+        </g>
+      ) : null}
+    </g>
+  );
+}
+
+function JourneyMap({ onEnter }) {
+  const [geo] = React.useState(() => buildGeo());
+  const [land, setLand] = React.useState([]);
+  const [T, setT] = React.useState(0);
+  const reduced = typeof matchMedia !== 'undefined'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Country outlines, fetched once. A failure leaves the copy on plain ivory.
+  React.useEffect(() => {
+    if (!geo || !window.topojson) return;
+    let alive = true;
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json')
+      .then((r) => r.json())
+      .then((topo) => {
+        if (!alive) return;
+        const fc = window.topojson.feature(topo, topo.objects.countries);
+        setLand(fc.features.map((f, i) => ({ key: 'c' + i, id: String(f.id), d: geo.geoPath(f) })));
+      })
+      .catch(() => {});
+    return () => { alive = false; };
+  }, [geo]);
+
+  // One clock. Reduced motion holds the last frame, where the whole route shows.
+  React.useEffect(() => {
+    if (!geo) return;
+    if (reduced) { setT(SPANS.Ending[0] + 1.2); return; }
+    let raf = 0;
+    const t0 = performance.now();
+    const step = (now) => {
+      setT(((now - t0) / 1000) % TOTAL);
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [geo, reduced]);
+
+  let svg = null;
+  if (geo) {
+    const run = runnerState(T, geo);
+    const cam = camera(T, run, geo);
+    const vb = `${cam.cx - W / 2 / cam.z} ${cam.cy - H / 2 / cam.z} ${W / cam.z} ${H / cam.z}`;
+    const arrive = [0.5].concat(geo.legs.map((l) => legWindow(l)[1]));
+    const visited = { 158: arrive[0], 826: arrive[1], 528: arrive[2] };
+    const trails = geo.legs.map((leg, i) => {
+      const k = run.legK[i];
+      if (k <= 0) return null;
+      const idx = k * N, i0 = Math.min(N - 1, Math.floor(idx));
+      const pts = leg.pts.slice(0, i0 + 1).concat([lerpP(leg.pts[i0], leg.pts[i0 + 1], idx - i0)]);
+      return pts.map((p, j) => (j ? 'L' : 'M') + p[0].toFixed(2) + ' ' + p[1].toFixed(2)).join('');
+    });
+    // ivory wash in at the start of the loop and out at the end
+    const fade = reduced ? 0
+      : 1 - easeOutCubic(clamp01(T / 0.7)) + easeOutCubic(clamp01((T - (TOTAL - 0.7)) / 0.7));
+
+    svg = (
+      <React.Fragment>
+        {/* fit, never crop: a clipped city label is worse than an ivory band */}
+        <svg viewBox={vb} preserveAspectRatio="xMidYMid meet" aria-hidden="true" style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',
+        }}>
+          <path d={geo.sphereD} fill={C.white} stroke={C.stone} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          {land.map((f) => (
+            <path key={f.key} d={f.d} fill={C.stone} stroke={C.white} strokeWidth="0.8" vectorEffect="non-scaling-stroke" />
+          ))}
+          {land.filter((f) => visited[f.id] != null).map((f) => (
+            <path key={'v' + f.key} d={f.d} fill={C.dust} stroke={C.white} strokeWidth="0.8"
+              fillOpacity={0.32 * easeOutCubic(clamp01((T - visited[f.id]) / 0.6))}
+              vectorEffect="non-scaling-stroke" />
+          ))}
+          {trails.map((d, i) => (d ? (
+            <path key={'t' + i} d={d} fill="none" stroke={C.ink} strokeWidth="2" strokeDasharray="7 7"
+              strokeLinecap="round" opacity="0.7" vectorEffect="non-scaling-stroke" />
+          ) : null))}
+          {STOPS.map((s, i) => <Pin key={s.id} stop={s} at={arrive[i]} T={T} z={cam.z} P={geo.P} />)}
+          <g transform={`translate(${run.pos[0]} ${run.pos[1]}) scale(${1 / cam.z})`}>
+            <Plane phase={T * 6} running={run.running} angle={run.angle} />
+          </g>
+        </svg>
+        <div style={{
+          position: 'absolute', inset: 0, background: C.ivory, pointerEvents: 'none',
+          opacity: Math.max(0, Math.min(1, fade)),
+        }} />
+      </React.Fragment>
+    );
   }
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let raf, W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    // soft round sprite per colour — solid-ish core, transparent edge → blocks
-    // that visually fuse where they overlap.
-    const spriteCache = {};
-    function sprite(rgb) {
-      if (spriteCache[rgb]) return spriteCache[rgb];
-      const s = document.createElement('canvas');
-      s.width = s.height = 256;
-      const g = s.getContext('2d');
-      const grad = g.createRadialGradient(128, 128, 0, 128, 128, 128);
-      grad.addColorStop(0, `rgba(${rgb},0.92)`);
-      grad.addColorStop(0.55, `rgba(${rgb},0.80)`);
-      grad.addColorStop(0.82, `rgba(${rgb},0.36)`);
-      grad.addColorStop(1, `rgba(${rgb},0)`);
-      g.fillStyle = grad;
-      g.fillRect(0, 0, 256, 256);
-      spriteCache[rgb] = s;
-      return s;
-    }
-
-    function build() {
-      W = canvas.clientWidth; H = canvas.clientHeight;
-      canvas.width = W * dpr; canvas.height = H * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const base = Math.min(W, H);
-      if (blobsRef.current.length === 0) {
-        const N = 6;
-        blobsRef.current = Array.from({ length: N }, (_, i) => {
-          const a = Math.random() * Math.PI * 2;
-          const speed = base * 0.00016 * (0.5 + Math.random());
-          return {
-            x: 0.16 * W + Math.random() * 0.68 * W,
-            y: 0.16 * H + Math.random() * 0.68 * H,
-            vx: Math.cos(a) * speed,
-            vy: Math.sin(a) * speed,
-            r: base * (0.14 + Math.random() * 0.09),
-            rgb: PALETTE[i % PALETTE.length],
-            // irregular shape: a few offset sub-lobes that wobble
-            lobes: Array.from({ length: 3 }, () => ({
-              ang: Math.random() * Math.PI * 2,
-              dist: Math.random() * 0.42,
-              sc: 0.55 + Math.random() * 0.42,
-              wob: Math.random() * Math.PI * 2,
-            })),
-          };
-        });
-      }
-    }
-
-    let last = performance.now(), kickAcc = 0;
-    function step(now) {
-      const dt = Math.min(40, now - last); last = now;
-      const base = Math.min(W, H);
-      const blobs = blobsRef.current;
-
-      // ~every second: a small random impulse to keep things lively
-      kickAcc += dt;
-      if (kickAcc > 1000) {
-        kickAcc = 0;
-        for (const b of blobs) {
-          const a = Math.random() * Math.PI * 2;
-          const k = base * 0.00010 * (0.4 + Math.random());
-          b.vx += Math.cos(a) * k; b.vy += Math.sin(a) * k;
-        }
-      }
-
-      // click → push nearby blocks outward
-      if (clickRef.current) {
-        const { x, y } = clickRef.current; clickRef.current = null;
-        for (const b of blobs) {
-          const dx = b.x - x, dy = b.y - y, d = Math.hypot(dx, dy) || 1;
-          const f = Math.max(0, 1 - d / (base * 0.7)) * base * 0.013;
-          b.vx += (dx / d) * f; b.vy += (dy / d) * f;
-        }
-      }
-
-      // pairwise: when blocks overlap, a gentle nudge so they meet and fuse
-      for (let i = 0; i < blobs.length; i++) {
-        for (let j = i + 1; j < blobs.length; j++) {
-          const a = blobs[i], b = blobs[j];
-          const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1;
-          const min = (a.r + b.r) * 0.6;
-          if (d < min) {
-            const nx = dx / d, ny = dy / d, push = (min - d) * 0.0035;
-            a.vx -= nx * push; a.vy -= ny * push;
-            b.vx += nx * push; b.vy += ny * push;
-          }
-        }
-      }
-
-      const damp = 0.99;
-      const minSp = base * 0.00006;
-      for (const b of blobs) {
-        b.x += b.vx * dt; b.y += b.vy * dt;
-        b.vx *= damp; b.vy *= damp;
-        const m = b.r * 0.45;
-        if (b.x < m) { b.x = m; b.vx = Math.abs(b.vx); }
-        if (b.x > W - m) { b.x = W - m; b.vx = -Math.abs(b.vx); }
-        if (b.y < m) { b.y = m; b.vy = Math.abs(b.vy); }
-        if (b.y > H - m) { b.y = H - m; b.vy = -Math.abs(b.vy); }
-        // never fully freeze
-        if (Math.hypot(b.vx, b.vy) < minSp) {
-          const a = Math.random() * Math.PI * 2;
-          b.vx += Math.cos(a) * minSp; b.vy += Math.sin(a) * minSp;
-        }
-      }
-    }
-
-    function draw(now) {
-      ctx.clearRect(0, 0, W, H);
-      const blobs = blobsRef.current;
-      ctx.globalCompositeOperation = 'source-over';
-      for (const b of blobs) {
-        const img = sprite(b.rgb);
-        ctx.globalAlpha = 0.5;
-        for (const lo of b.lobes) {
-          const wob = 1 + Math.sin(now * 0.0006 + lo.wob) * 0.12;
-          const rad = Math.max(8, b.r * lo.sc * wob);
-          const ox = Math.cos(lo.ang) * lo.dist * b.r;
-          const oy = Math.sin(lo.ang) * lo.dist * b.r;
-          ctx.drawImage(img, b.x + ox - rad, b.y + oy - rad, rad * 2, rad * 2);
-        }
-      }
-      ctx.globalAlpha = 1;
-    }
-
-    // Driver: rAF plus a stall-detector for throttled/offscreen iframes.
-    let stop = false, lastTick = performance.now();
-    function rafLoop(now) {
-      if (stop) return;
-      lastTick = performance.now();
-      if (!reduce) step(now);
-      draw(now);
-      raf = requestAnimationFrame(rafLoop);
-    }
-    build();
-    raf = requestAnimationFrame(rafLoop);
-    const stallGuard = setInterval(() => {
-      if (stop) return;
-      if (performance.now() - lastTick > 120) {
-        lastTick = performance.now();
-        const n = performance.now();
-        if (!reduce) step(n);
-        draw(n);
-      }
-    }, 33);
-    const tReveal = setTimeout(() => setRevealed(true), reduce ? 200 : 1100);
-    const tArm = setTimeout(() => setArmed(true), reduce ? 400 : 1700);
-    const onResize = () => build();
-    window.addEventListener('resize', onResize);
-    return () => {
-      stop = true;
-      cancelAnimationFrame(raf);
-      clearInterval(stallGuard);
-      clearTimeout(tReveal);
-      clearTimeout(tArm);
-      window.removeEventListener('resize', onResize);
-    };
-  }, []);
-
   return (
-    <div
-      onClick={handleClick}
-      style={{
-        position: 'absolute', inset: 0, overflow: 'hidden',
-        background: 'radial-gradient(120% 90% at 50% 18%, #FBFAF8 0%, var(--neve-warm-ivory) 60%, #EFEBE5 100%)',
-      }}
-    >
-      <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} />
+    <div data-screen-label="Welcome" style={{
+      position: 'absolute', inset: 0, overflow: 'hidden', background: C.ivory,
+    }}>
+      {svg}
 
+      {/* copy sits in the bottom-left, out of the flight path */}
       <div style={{
-        position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-        textAlign: 'center', pointerEvents: 'none', padding: '0 24px',
-        opacity: revealed ? 1 : 0,
-        transition: 'opacity 900ms var(--ease-calm)',
+        position: 'absolute', left: 0, right: 0, bottom: 0,
+        padding: 'clamp(28px, 6vh, 64px) clamp(20px, 5vw, 72px)',
+        background: 'linear-gradient(rgba(247,245,242,0) 0%, rgba(247,245,242,0.82) 46%, var(--neve-warm-ivory) 100%)',
       }}>
-        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)', textShadow: '0 1px 16px rgba(247,245,242,0.95)' }}>This is a person, not a homepage</div>
-        <h1 style={{
-          margin: 0, fontFamily: 'var(--font-display)', fontWeight: 400,
-          fontSize: 'clamp(40px, 7vw, 76px)', lineHeight: 1.04,
-          letterSpacing: '-0.01em', color: 'var(--neve-ink-navy)', textWrap: 'pretty',
-          textShadow: '0 2px 22px rgba(247,245,242,0.92)',
-        }}>Welcome to Wei-Yun Neve Ning's space</h1>
-        <p style={{
-          margin: '2px 0 4px', maxWidth: 560, fontFamily: 'var(--font-body)', fontSize: 'clamp(15px, 1.6vw, 17px)',
-          lineHeight: 1.55, color: 'var(--text-secondary)', textWrap: 'pretty',
-          textShadow: '0 1px 16px rgba(247,245,242,0.95)',
-        }}>Product Designer &amp; Design Lead — turning messy systems and emerging technology into products people can actually understand and control.</p>
-        <div style={{
-          fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-muted)',
-          textShadow: '0 1px 16px rgba(247,245,242,0.95)',
-        }}>Click anywhere — nudge the colours.</div>
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            marginTop: 12, pointerEvents: armed ? 'auto' : 'none',
-            opacity: armed ? 1 : 0, transition: 'opacity 600ms var(--ease-calm)',
+        <div style={{ maxWidth: 620 }}>
+          <h1 style={{
+            margin: '0 0 10px', fontFamily: 'var(--font-display)', fontWeight: 400,
+            fontSize: 'clamp(34px, 6vw, 62px)', lineHeight: 1.04, letterSpacing: '-0.015em',
+            color: 'var(--neve-ink-navy)',
+          }}>Welcome to Neve's journey</h1>
+          <p style={{
+            margin: '0 0 22px', fontFamily: 'var(--font-body)',
+            fontSize: 'clamp(15px, 1.5vw, 17px)', lineHeight: 1.6, color: 'var(--text-secondary)',
+          }}>Creative, logical, and attuned to people. Now in the Netherlands.</p>
+          <button onClick={onEnter} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 9,
+            padding: '13px 26px', borderRadius: 'var(--radius-full)',
+            background: 'var(--action-primary)', color: 'var(--text-inverse)',
+            border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-1)',
+            fontFamily: 'var(--font-body)', fontSize: 15, fontWeight: 500,
+            transition: 'var(--transition-fast)',
           }}
-        >
-          {Button ? <Button variant="primary" size="lg" onClick={onEnter}>Come in</Button> : null}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--action-primary-hover)'; e.currentTarget.style.boxShadow = 'var(--shadow-2)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--action-primary)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}>
+            Come in
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -4363,7 +4736,7 @@ function Footer() {
 
 /* A prominent button linking out to a live project. Shows the URL as a button
    (never the raw address); an optional `note` (e.g. a password) pops on hover. */
-function ProjectLinkButton({ href, note }) {
+function ProjectLinkButton({ href, note, label = 'Visit the live project' }) {
   const [hover, setHover] = React.useState(false);
   return (
     <div style={{ position: 'relative', display: 'inline-block', margin: '0 0 30px' }}
@@ -4377,7 +4750,7 @@ function ProjectLinkButton({ href, note }) {
         boxShadow: hover ? 'var(--shadow-2)' : 'var(--shadow-1)',
         transition: 'var(--transition-fast)',
       }}>
-        Visit the live project
+        {label}
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7 17 17 7M9 7h8v8" />
         </svg>
@@ -4550,7 +4923,13 @@ function RolePage({ role, projects = [], onBack, onOpenPost }) {
           lineHeight: 1.55, color: 'var(--text-secondary)', textWrap: 'pretty',
         }}>{role.desc}</p>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '28px 0 26px' }}>
+        {role.link ? (
+          <div style={{ marginTop: 22 }}>
+            <ProjectLinkButton href={role.link} label={role.linkLabel || 'Visit the live project'} />
+          </div>
+        ) : null}
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: role.link ? '6px 0 26px' : '28px 0 26px' }}>
           <TagChip label="All" active={!tag} onClick={() => setTag(null)} />
           {allTags.map((t) => (
             <TagChip key={t} label={t} active={tag === t} onClick={() => setTag(tag === t ? null : t)} />
@@ -4585,19 +4964,59 @@ function SocialIcon({ type, label, href }) {
   );
 }
 
-function AboutPage({ onExplore }) {
-  // Highlight + accent colour: NEVE "gentle attention" amber token.
-  const HL = 'var(--neve-muted-amber)';
-  // Render a paragraph, turning ==marked== phrases into highlighter spans.
-  const mark = (text) => text.split('==').map((seg, i) => (
+/* A paragraph string with ==marked== phrases rendered as highlighter spans
+   (NEVE "gentle attention" amber). Shared by the About and CV pages. */
+function Highlighted({ text }) {
+  return text.split('==').map((seg, i) => (
     i % 2 === 1 ? (
       <mark key={i} style={{
-        background: HL, color: 'var(--neve-ink-navy)', fontWeight: 600,
+        background: 'var(--neve-muted-amber)', color: 'var(--neve-ink-navy)', fontWeight: 600,
         padding: '0.06em 0.3em', borderRadius: 4,
         boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone',
       }}>{seg}</mark>
     ) : <React.Fragment key={i}>{seg}</React.Fragment>
   ));
+}
+
+/* About me has two faces: the written intro, and the timeline. They stay
+   separate stages ('about' / 'cv') so browser back/forward and refresh keep
+   working; this bar just moves between them. */
+function AboutTabs({ active, onSelect }) {
+  const tab = (id, label) => {
+    const on = active === id;
+    return (
+      <button
+        key={id}
+        role="tab"
+        aria-selected={on}
+        onClick={() => { if (!on) onSelect(id); }}
+        onMouseEnter={(e) => { if (!on) e.currentTarget.style.color = 'var(--neve-ink-navy)'; }}
+        onMouseLeave={(e) => { if (!on) e.currentTarget.style.color = 'var(--text-muted)'; }}
+        style={{
+          background: 'none', border: 'none', cursor: on ? 'default' : 'pointer',
+          padding: '10px 0', marginBottom: -1,
+          borderBottom: `2px solid ${on ? 'var(--neve-clay-orange)' : 'transparent'}`,
+          fontFamily: 'var(--font-body)', fontSize: 15,
+          fontWeight: on ? 600 : 400,
+          color: on ? 'var(--neve-ink-navy)' : 'var(--text-muted)',
+          transition: 'var(--transition-fast)',
+        }}>{label}</button>
+    );
+  };
+  return (
+    <div role="tablist" style={{
+      display: 'flex', gap: 26, borderBottom: '1px solid var(--border-default)',
+      margin: '20px 0 34px',
+    }}>
+      {tab('about', 'Intro')}
+      {tab('cv', 'Milestones')}
+    </div>
+  );
+}
+
+function AboutPage({ onExplore, onSelectTab }) {
+  // Highlight + accent colour: NEVE "gentle attention" amber token.
+  const HL = 'var(--neve-muted-amber)';
   return (
     <PageShell label="About me">
       <div style={{ maxWidth: 760, margin: '0 auto', padding: 'clamp(92px, 13vh, 128px) clamp(20px, 5vw, 48px) 90px' }}>
@@ -4627,10 +5046,12 @@ function AboutPage({ onExplore }) {
 
         {ABOUT.aka ? (
           <p style={{
-            margin: '0 0 30px', fontFamily: 'var(--font-body)', fontStyle: 'italic',
+            margin: '0 0 4px', fontFamily: 'var(--font-body)', fontStyle: 'italic',
             fontSize: 15, color: 'var(--text-muted)',
           }}>{ABOUT.aka}</p>
         ) : null}
+
+        <AboutTabs active="about" onSelect={onSelectTab} />
 
         {/* Highlighted intro with a left accent bar (reference treatment). */}
         <div style={{ borderLeft: `3px solid ${HL}`, paddingLeft: 'clamp(16px, 3vw, 26px)' }}>
@@ -4639,7 +5060,7 @@ function AboutPage({ onExplore }) {
               margin: i === ABOUT.intro.length - 1 ? 0 : '0 0 18px',
               fontFamily: 'var(--font-body)', fontSize: 'clamp(16px, 1.4vw, 18px)',
               lineHeight: 1.75, color: 'var(--text-secondary)', textWrap: 'pretty',
-            }}>{mark(para)}</p>
+            }}><Highlighted text={para} /></p>
           ))}
         </div>
 
@@ -4659,6 +5080,72 @@ function AboutPage({ onExplore }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* A demo clip inside a case study. It stays a still image until clicked:
+   the file is only fetched then (preload="none"), and because the click is a
+   user gesture the sound can play — which matters when the piece IS sound. */
+function VideoFigure({ src, poster, caption }) {
+  const [playing, setPlaying] = React.useState(false);
+  const [hover, setHover] = React.useState(false);
+  const ref = React.useRef(null);
+  const start = () => {
+    setPlaying(true);
+    const v = ref.current;
+    if (v) { v.play().catch(() => {}); }
+  };
+  return (
+    <figure style={{ margin: '0 0 34px' }}>
+      <div
+        onClick={() => { if (!playing) start(); }}
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
+        style={{
+          position: 'relative', borderRadius: 14, overflow: 'hidden',
+          border: '1px solid var(--border-default)', background: 'var(--neve-ink-navy)',
+          cursor: playing ? 'default' : 'pointer', lineHeight: 0,
+        }}>
+        <video
+          ref={ref}
+          src={coverSrc(src)}
+          poster={coverSrc(poster)}
+          preload="none"
+          controls={playing}
+          playsInline
+          style={{
+            width: '100%', display: 'block', aspectRatio: '1280 / 684',
+            objectFit: 'cover', background: 'var(--neve-ink-navy)',
+          }}
+        />
+        {!playing ? (
+          <span style={{
+            position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
+            background: hover ? 'rgba(15,23,42,0.28)' : 'rgba(15,23,42,0.16)',
+            transition: 'background 240ms var(--ease-calm)',
+          }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 9,
+              padding: '11px 20px', borderRadius: 'var(--radius-full)',
+              background: 'var(--surface-card)', color: 'var(--neve-ink-navy)',
+              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500,
+              boxShadow: 'var(--shadow-2)',
+              transform: hover ? 'scale(1.04)' : 'none',
+              transition: 'transform 240ms var(--ease-calm)',
+            }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              Play with sound
+            </span>
+          </span>
+        ) : null}
+      </div>
+      {caption ? (
+        <figcaption style={{
+          marginTop: 8, fontFamily: 'var(--font-body)', fontSize: 13,
+          color: 'var(--text-muted)', textAlign: 'center', textWrap: 'pretty',
+        }}>{caption}</figcaption>
+      ) : null}
+    </figure>
+  );
+}
+
 function BlogPost({ role, post, backLabel, onBack }) {
   const back = backLabel || (role && role.title) || 'Back';
   return (
@@ -4723,6 +5210,11 @@ function BlogPost({ role, post, backLabel, onBack }) {
         {(() => {
           let quoteShown = false;
           return post.blog.sections.map((s, i) => {
+            // video block — poster first, loads and plays only on click, so a
+            // heavy demo clip costs nothing to visitors who scroll past it.
+            if (s.type === 'video') {
+              return <VideoFigure key={i} src={s.src} poster={s.poster} caption={s.caption} />;
+            }
             // image block — full-width figure with optional caption
             if (s.type === 'image') {
               const isrc = coverSrc(s.src);
@@ -4792,7 +5284,7 @@ function BlogList({ posts = [], onOpen }) {
         <p style={{
           margin: '0 0 32px', maxWidth: 600, fontFamily: 'var(--font-body)', fontSize: 16,
           lineHeight: 1.55, color: 'var(--text-secondary)', textWrap: 'pretty',
-        }}>Side projects, experiments, and notes from the desk — the things that don't fit a case study.</p>
+        }}>Side projects, experiments, and notes from the desk: the things that don't fit a case study.</p>
 
         {posts.length ? (
           <div style={{
@@ -4805,8 +5297,497 @@ function BlogList({ posts = [], onOpen }) {
           <p style={{
             padding: '40px 0', fontFamily: 'var(--font-body)', fontSize: 15,
             color: 'var(--text-muted)', fontStyle: 'italic',
-          }}>No posts yet — check back soon.</p>
+          }}>No posts yet. Check back soon.</p>
         )}
+      </div>
+    </PageShell>
+  );
+}
+
+/* CVPage — the CV as a guided walk instead of a downloadable PDF.
+   One gap-free timeline from the first job to now (work, study, side roles
+   and moves all on the same spine), and beside it a margin note in Weiyun's
+   own voice explaining what the line the reader is pointing at really meant.
+
+   Desktop: hover/focus a station → it lights up, the rest dim, the margin
+   note swaps. Narrow screens have no hover, so the note opens inline on tap.
+   All copy lives in `CV` (src/content.js). */
+
+/* How each kind of station is drawn on the spine. */
+const NODE = {
+  work: { size: 13, fill: 'var(--neve-ink-navy)', ring: 'var(--neve-ink-navy)' },
+  study: { size: 13, fill: 'var(--neve-dust-blue)', ring: 'var(--neve-dust-blue)' },
+  side: { size: 9, fill: 'var(--surface-card)', ring: 'var(--neve-ink-300)' },
+  build: { size: 13, fill: 'var(--neve-clay-orange)', ring: 'var(--neve-clay-orange)' },
+  move: { size: 7, fill: 'var(--neve-warm-ivory)', ring: 'var(--neve-ink-300)' },
+  gap: { size: 9, fill: 'var(--neve-warm-ivory)', ring: 'var(--neve-muted-amber)' },
+  life: { size: 9, fill: 'var(--neve-warm-ivory)', ring: 'var(--neve-ink-300)' },
+};
+const isAside = (kind) => kind === 'side';
+const isMarker = (kind) => kind === 'move' || kind === 'gap' || kind === 'life';
+const startYear = (s) => ((s.period || '').match(/\d{4}/) || ['·'])[0];
+
+/* Facts Weiyun still has to confirm — a placeholder never passes as a fact. */
+function TodoBadge() {
+  return (
+    <span title="Unconfirmed: edit CV in src/content.js" style={{
+      padding: '2px 9px', borderRadius: 'var(--radius-full)',
+      background: 'var(--neve-muted-amber)', color: 'var(--neve-ink-navy)',
+      fontFamily: 'var(--font-body)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap',
+    }}>to confirm</span>
+  );
+}
+
+/* The note itself — same markup in the margin (desktop) and inline (mobile). */
+function Note({ station, compact }) {
+  if (!station) return null;
+  return (
+    <div style={{
+      borderLeft: '3px solid var(--neve-muted-amber)',
+      paddingLeft: compact ? 14 : 16,
+      marginTop: compact ? 12 : 0,
+    }}>
+      <div className="neve-eyebrow" style={{
+        color: 'var(--text-muted)', marginBottom: 7,
+        display: 'flex', alignItems: 'center', gap: 7,
+      }}>
+        {CV.noteLabel}
+        {station.draft ? (
+          <span title="Draft note, still to be rewritten in Weiyun's voice" style={{
+            width: 6, height: 6, borderRadius: '50%', background: 'var(--neve-muted-amber)',
+          }} />
+        ) : null}
+      </div>
+      <p style={{
+        margin: 0, fontFamily: 'var(--font-body)', fontSize: compact ? 14.5 : 15,
+        lineHeight: 1.72, color: 'var(--text-secondary)', textWrap: 'pretty',
+      }}>{station.note}</p>
+    </div>
+  );
+}
+
+/* One station on the journey. */
+function Station({ station: s, cases, active, faded, onActivate, onOpenCase }) {
+  const node = NODE[s.kind] || NODE.work;
+  const aside = isAside(s.kind);
+  const marker = isMarker(s.kind);
+  const linked = (s.cases || []).map((id) => cases[id]).filter(Boolean);
+  const groups = s.groups || (s.points ? [{ points: s.points }] : []);
+
+  return (
+    <li
+      id={`cv-st-${s.id}`}
+      tabIndex={0}
+      onMouseEnter={() => onActivate(s.id)}
+      onFocus={() => onActivate(s.id)}
+      onClick={() => onActivate(s.id, true)}
+      style={{
+        position: 'relative',
+        paddingLeft: aside ? 52 : 34,
+        paddingBottom: marker ? 22 : 36,
+        outline: 'none',
+        cursor: 'default',
+        opacity: faded ? 0.34 : 1,
+        transition: 'opacity 320ms var(--ease-calm)',
+      }}>
+      {/* branch line out to the side/parallel strands */}
+      {aside ? (
+        <span aria-hidden="true" style={{
+          position: 'absolute', left: 6, top: 11, width: 30, height: 1,
+          background: 'var(--border-default)',
+        }} />
+      ) : null}
+      {/* node on the spine */}
+      <span aria-hidden="true" style={{
+        position: 'absolute',
+        left: (aside ? 36 : 6) - node.size / 2,
+        top: 11 - node.size / 2,
+        width: node.size, height: node.size, borderRadius: '50%',
+        background: node.fill,
+        border: `2px ${marker ? 'dashed' : 'solid'} ${node.ring}`,
+        boxShadow: `0 0 0 4px var(--neve-warm-ivory)${active ? ', 0 0 0 7px rgba(224,122,95,0.22)' : ''}`,
+        transform: active ? 'scale(1.25)' : 'none',
+        transition: 'transform 280ms var(--ease-calm), box-shadow 280ms var(--ease-calm)',
+      }} />
+
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap', marginBottom: 3 }}>
+        <span style={{
+          fontFamily: 'var(--font-body)', fontSize: 12.5, fontWeight: 600, letterSpacing: '0.05em',
+          color: active ? 'var(--neve-clay-orange)' : 'var(--neve-dust-blue)',
+          transition: 'color 240ms var(--ease-calm)',
+        }}>{s.period}</span>
+        {s.place ? (
+          <span style={{ fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--text-muted)' }}>
+            · {s.place}
+          </span>
+        ) : null}
+        {s.current ? (
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            fontFamily: 'var(--font-body)', fontSize: 12, color: 'var(--neve-success)',
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%', background: 'var(--neve-success)',
+              animation: 'nevePulse 2.6s var(--ease-calm) infinite',
+            }} />
+            now
+          </span>
+        ) : null}
+        {s.todo ? <TodoBadge /> : null}
+      </div>
+
+      <h3 style={{
+        margin: 0,
+        fontFamily: marker ? 'var(--font-body)' : 'var(--font-display)',
+        fontWeight: marker ? 500 : 400,
+        fontStyle: s.kind === 'gap' ? 'italic' : 'normal',
+        fontSize: marker ? 15 : (aside ? 'clamp(19px, 2vw, 21px)' : 'clamp(22px, 2.6vw, 27px)'),
+        lineHeight: 1.22,
+        color: marker ? 'var(--text-muted)' : 'var(--neve-ink-navy)',
+      }}>{s.role}</h3>
+      {s.org ? (
+        <div style={{
+          fontFamily: 'var(--font-body)', fontSize: marker ? 13 : 14.5,
+          fontWeight: marker ? 400 : 500,
+          color: marker ? 'var(--text-muted)' : 'var(--text-secondary)',
+          marginTop: 2,
+        }}>{s.org}</div>
+      ) : null}
+
+      {groups.map((g, gi) => (
+        <div key={gi} style={{ marginTop: gi === 0 ? 10 : 12 }}>
+          {g.heading ? (
+            <div className="neve-eyebrow" style={{ color: 'var(--text-muted)', marginBottom: 5 }}>
+              {g.heading}
+            </div>
+          ) : null}
+          <ul style={{ margin: 0, padding: '0 0 0 17px', maxWidth: 620 }}>
+            {g.points.map((pt, i) => (
+              <li key={i} style={{
+                fontFamily: 'var(--font-body)', fontSize: 14.8, lineHeight: 1.66,
+                color: 'var(--text-secondary)', marginBottom: 5, textWrap: 'pretty',
+              }}>{pt}</li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      {linked.length ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 12 }}>
+          {linked.map((c) => (
+            <button key={c.id} onClick={(e) => { e.stopPropagation(); onOpenCase(c.id); }} style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border-default)', background: 'var(--surface-card)',
+              fontFamily: 'var(--font-body)', fontSize: 12.5, color: 'var(--neve-ink-navy)',
+              cursor: 'pointer', transition: 'var(--transition-fast)', textAlign: 'left',
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--neve-ink-navy)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-default)'; e.currentTarget.style.boxShadow = 'none'; }}>
+              {c.title}
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {/* the same note, inline — this is what a phone gets on tap */}
+      <div className={'cv-note-inline' + (active ? ' open' : '')}>
+        <div><Note station={s} compact /></div>
+      </div>
+    </li>
+  );
+}
+
+/* Shown instead of the timeline while the copy is still being written.
+   The drawing is the Milestones spine building itself: the line draws down,
+   three stations pop in, and the lines of text they will carry slide out. */
+function UnderConstruction() {
+  return (
+    <div style={{ padding: 'clamp(36px, 9vh, 86px) 0 clamp(40px, 10vh, 100px)' }}>
+      <svg width="150" height="150" viewBox="0 0 132 150" aria-hidden="true" style={{ display: 'block', marginBottom: 30 }}>
+        <line x1="22" y1="18" x2="22" y2="132" stroke="var(--border-default)" strokeWidth="1.5" />
+        <line className="cv-wip-draw" x1="22" y1="18" x2="22" y2="132"
+          stroke="var(--neve-clay-orange)" strokeWidth="1.5" strokeLinecap="round" />
+        {[30, 71, 112].map((cy, i) => (
+          <g key={cy}>
+            <circle className={`cv-wip-node cv-wip-d${i}`} cx="22" cy={cy} r="6.5"
+              fill="var(--surface-card)" stroke="var(--neve-clay-orange)" strokeWidth="2" />
+            <rect className={`cv-wip-row cv-wip-d${i}`} x="40" y={cy - 9} width="76" height="7" rx="3.5"
+              fill="var(--neve-stone-grey)" />
+            <rect className={`cv-wip-row cv-wip-d${i}`} x="40" y={cy + 2} width="50" height="7" rx="3.5"
+              fill="var(--neve-stone-grey)" />
+          </g>
+        ))}
+      </svg>
+      <h2 style={{
+        margin: '0 0 10px', fontFamily: 'var(--font-display)', fontWeight: 400,
+        fontSize: 'clamp(28px, 4vw, 40px)', lineHeight: 1.1, color: 'var(--neve-ink-navy)',
+      }}>Under construction</h2>
+      <p style={{
+        margin: 0, maxWidth: 460, fontFamily: 'var(--font-body)',
+        fontSize: 'clamp(15px, 1.4vw, 17px)', lineHeight: 1.7, color: 'var(--text-secondary)',
+      }}>I am still writing this one. Come back soon.</p>
+    </div>
+  );
+}
+
+function CVPage({ cases = {}, onOpenCase, onExplore, onSelectTab }) {
+  const [activeId, setActiveId] = React.useState(null);
+  const [readYear, setReadYear] = React.useState(startYear(CV.journey[0]));
+  const [progress, setProgress] = React.useState(0);
+  const spineRef = React.useRef(null);
+
+  const active = CV.journey.find((s) => s.id === activeId) || null;
+  const activate = (id, isClick) => setActiveId((cur) => (isClick && cur === id ? null : id));
+
+  /* Years down the left edge — click one to travel to that point. */
+  const years = [];
+  CV.journey.forEach((s) => {
+    const y = startYear(s);
+    if (!years.some((r) => r.year === y)) years.push({ year: y, id: s.id });
+  });
+
+  /* The path fills in as you read — "how far along the journey am I". */
+  React.useEffect(() => {
+    const spine = spineRef.current;
+    if (!spine) return;
+    const scroller = spine.closest('[data-screen-label]');
+    if (!scroller) return;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      const r = spine.getBoundingClientRect();
+      const p = (window.innerHeight * 0.52 - r.top) / Math.max(r.height, 1);
+      setProgress(Math.max(0, Math.min(1, p)));
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    measure();
+    scroller.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
+  /* Which year the reader is standing in, for the year rail. */
+  React.useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const els = CV.journey.map((s) => document.getElementById(`cv-st-${s.id}`)).filter(Boolean);
+    if (!els.length) return;
+    const io = new IntersectionObserver((entries) => {
+      const seen = entries.filter((e) => e.isIntersecting)
+        .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+      if (!seen.length) return;
+      const st = CV.journey.find((s) => `cv-st-${s.id}` === seen[0].target.id);
+      if (st) setReadYear(startYear(st));
+    }, { rootMargin: '-24% 0px -58% 0px', threshold: 0 });
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+
+  const jump = (id) => {
+    const el = document.getElementById(`cv-st-${id}`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  /* The tab still exists and still carries the header; only the timeline is
+     swapped out. Flip CV.underConstruction in content.js to bring it back. */
+  if (CV.underConstruction) {
+    return (
+      <PageShell label="CV">
+        <div style={{
+          maxWidth: 1240, margin: '0 auto',
+          padding: 'clamp(88px, 12vh, 118px) clamp(20px, 5vw, 48px) 90px',
+        }}>
+          <h1 style={{
+            margin: '0 0 6px', fontFamily: 'var(--font-display)', fontWeight: 400,
+            fontSize: 'clamp(38px, 6.4vw, 64px)', lineHeight: 1.02, letterSpacing: '-0.015em',
+            color: 'var(--neve-ink-navy)',
+          }}>{ABOUT.name}</h1>
+          <p style={{
+            margin: '0 0 14px', fontFamily: 'var(--font-body)', fontSize: 'clamp(16px, 1.6vw, 19px)',
+            fontWeight: 500, color: 'var(--neve-dust-blue)',
+          }}>{CV.title}</p>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 4,
+            fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-secondary)',
+          }}>
+            {CV.location ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+                <ContactIcon type="pin" />{CV.location}
+              </span>
+            ) : null}
+          </div>
+
+          <AboutTabs active="cv" onSelect={onSelectTab} />
+          <UnderConstruction />
+        </div>
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell label="CV">
+      <div style={{
+        maxWidth: 1240, margin: '0 auto',
+        padding: 'clamp(88px, 12vh, 118px) clamp(20px, 5vw, 48px) 90px',
+      }}>
+        {/* ---- header: name, role, place — nothing else competes with the walk ---- */}
+        <h1 style={{
+          margin: '0 0 6px', fontFamily: 'var(--font-display)', fontWeight: 400,
+          fontSize: 'clamp(38px, 6.4vw, 64px)', lineHeight: 1.02, letterSpacing: '-0.015em',
+          color: 'var(--neve-ink-navy)',
+        }}>{ABOUT.name}</h1>
+        <p style={{
+          margin: '0 0 14px', fontFamily: 'var(--font-body)', fontSize: 'clamp(16px, 1.6vw, 19px)',
+          fontWeight: 500, color: 'var(--neve-dust-blue)',
+        }}>{CV.title}</p>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 4,
+          fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-secondary)',
+        }}>
+          {CV.location ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <ContactIcon type="pin" />{CV.location}
+            </span>
+          ) : null}
+          {CV.status ? <span>{CV.status}</span> : null}
+        </div>
+
+        <AboutTabs active="cv" onSelect={onSelectTab} />
+
+        {/* ---- the journey ---- */}
+        <div className="cv-layout">
+          {/* years down the left edge */}
+          <nav className="cv-yearrail" aria-label="Years">
+            <div style={{ position: 'sticky', top: 128 }}>
+              {years.map((y) => {
+                const on = readYear === y.year;
+                return (
+                  <button key={y.year + y.id} onClick={() => jump(y.id)} style={{
+                    display: 'block', width: '100%', padding: '5px 0', background: 'none', border: 'none',
+                    cursor: 'pointer', textAlign: 'left',
+                    fontFamily: 'var(--font-body)', fontSize: on ? 14 : 13,
+                    fontWeight: on ? 600 : 400,
+                    color: on ? 'var(--neve-clay-orange)' : 'var(--text-muted)',
+                    transition: 'var(--transition-fast)',
+                  }}>{y.year}</button>
+                );
+              })}
+            </div>
+          </nav>
+
+          <div style={{ minWidth: 0 }} onMouseLeave={() => setActiveId(null)}>
+            <div style={{ position: 'relative' }} ref={spineRef}>
+              {/* the path: a quiet line, filled in as far as you have read */}
+              <span aria-hidden="true" style={{
+                position: 'absolute', left: 5, top: 10, bottom: 10, width: 1,
+                background: 'var(--border-default)',
+              }} />
+              <span aria-hidden="true" style={{
+                position: 'absolute', left: 5, top: 10, width: 1,
+                height: `${(progress * 100).toFixed(2)}%`,
+                maxHeight: 'calc(100% - 20px)',
+                background: 'linear-gradient(var(--neve-clay-orange), var(--neve-dust-blue))',
+                transition: 'height 120ms linear',
+              }} />
+              {/* the road starts at today and runs backwards from here */}
+              <div style={{ position: 'relative', paddingLeft: 34, paddingBottom: 26 }}>
+                <span aria-hidden="true" style={{
+                  position: 'absolute', left: 0, top: 2, width: 11, height: 11, borderRadius: '50%',
+                  background: 'var(--neve-clay-orange)',
+                  boxShadow: '0 0 0 4px var(--neve-warm-ivory), 0 0 0 7px rgba(224,122,95,0.18)',
+                }} />
+                <span style={{
+                  fontFamily: 'var(--font-body)', fontSize: 12.5, fontWeight: 600,
+                  letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--neve-clay-orange)',
+                }}>Today</span>
+                <span style={{
+                  fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', marginLeft: 10,
+                }}>we walk backwards from here</span>
+              </div>
+              <ol style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {CV.journey.map((s) => (
+                  <Station
+                    key={s.id}
+                    station={s}
+                    cases={cases}
+                    active={activeId === s.id}
+                    faded={!!activeId && activeId !== s.id}
+                    onActivate={activate}
+                    onOpenCase={onOpenCase}
+                  />
+                ))}
+              </ol>
+            </div>
+          </div>
+
+          {/* the guide, standing beside the CV */}
+          <aside className="cv-margin" aria-live="polite">
+            <div style={{ position: 'sticky', top: 128, minHeight: 160 }}>
+              {active ? <Note station={active} /> : (
+                <p style={{
+                  margin: 0, fontFamily: 'var(--font-body)', fontStyle: 'italic',
+                  fontSize: 14.5, lineHeight: 1.7, color: 'var(--text-muted)',
+                }}>{CV.noteIdle}</p>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* ---- core expertise ---- */}
+        <div style={{ marginTop: 26, paddingTop: 34, borderTop: '1px solid var(--border-default)' }}>
+          <h2 style={{
+            margin: '0 0 22px', fontFamily: 'var(--font-display)', fontWeight: 400,
+            fontSize: 'clamp(24px, 3vw, 31px)', lineHeight: 1.1, color: 'var(--neve-ink-navy)',
+          }}>What I carry with me</h2>
+          <div style={{
+            display: 'grid', gap: 26,
+            gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          }}>
+            {CV.expertise.map((group) => (
+              <div key={group.heading}>
+                <div className="neve-eyebrow" style={{ color: 'var(--text-muted)', marginBottom: 10 }}>
+                  {group.heading}
+                </div>
+                <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                  {group.items.map((item) => (
+                    <li key={item} style={{
+                      fontFamily: 'var(--font-body)', fontSize: 14, lineHeight: 1.6,
+                      color: 'var(--text-secondary)', padding: '3px 0',
+                    }}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {CV.languages && CV.languages.length ? (
+            <div style={{ marginTop: 30, display: 'flex', gap: 22, flexWrap: 'wrap' }}>
+              {CV.languages.map((l) => (
+                <span key={l.name} style={{
+                  fontFamily: 'var(--font-body)', fontSize: 14, color: 'var(--text-secondary)',
+                }}>
+                  <strong style={{ fontWeight: 600, color: 'var(--neve-ink-navy)' }}>{l.name}</strong> · {l.level}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div style={{ marginTop: 44, paddingTop: 24, borderTop: '1px solid var(--border-default)' }}>
+          <button onClick={onExplore} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'none', border: 'none', padding: '6px 0', cursor: 'pointer',
+            fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, color: 'var(--neve-clay-orange)',
+          }}>
+            See the work behind all this
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+          </button>
+        </div>
       </div>
     </PageShell>
   );
@@ -4852,7 +5833,7 @@ function QuestionCard({ onSubmit }) {
         <p style={{
           margin: '0 0 26px', fontFamily: 'var(--font-body)', fontSize: 15,
           lineHeight: 1.5, color: 'var(--text-secondary)',
-        }}>Just curious — it quietly helps me know who's stopping by.</p>
+        }}>Just curious. It quietly helps me know who's stopping by.</p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {options.map((o) => {
@@ -4920,6 +5901,14 @@ const ROLES = [
     title: 'Knitwear designer',
     duo: ['#E07A5F', '#F2C48D'],
     desc: 'I create tactile pieces through knitting, crochet, and macramé, turning slow craft into wearable objects, soft textures, and everyday rituals.',
+  },
+  {
+    id: 'creative-technologist', num: '05', eyebrow: 'Generative art · creative coding',
+    title: 'Creative Technologist',
+    duo: ['#0F172A', '#B8B4D8'],
+    desc: 'I write art in code: generative visuals where systems, motion, and chance meet.',
+    link: 'https://openprocessing.org/@nevening/#sketches',
+    linkLabel: 'See the sketches on OpenProcessing',
   },
 ];
 
@@ -5604,7 +6593,7 @@ function IdentityDeck({ onChoose }) {
 /* ===================================================================== */
 function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
   const [menuOpen, setMenuOpen] = React.useState(false);
-  const onAboutPage = stage === 'about';
+  const onAboutPage = stage === 'about' || stage === 'cv'; // both are tabs of About me
   const onPortfolioArea = stage === 'identity' || stage === 'role' || stage === 'post';
   const onBlogArea = stage === 'blog' || stage === 'blogpost';
   // Close the mobile menu whenever the page changes.
@@ -5685,23 +6674,6 @@ function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
           {navLink(onAboutPage, onAbout, 'About me')}
           {navLink(onPortfolioArea, onPortfolio, 'Portfolio')}
           {navLink(onBlogArea, onBlog, 'Blog')}
-
-          <a href={CV_URL} download
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: 7,
-              fontFamily: 'var(--font-body)', fontSize: 14, fontWeight: 500, lineHeight: 1,
-              textDecoration: 'none', color: 'var(--neve-ink-navy)',
-              padding: '8px 16px', borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--border-strong)', background: 'var(--surface-card)',
-              transition: 'var(--transition-fast)',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--neve-ink-navy)'; e.currentTarget.style.boxShadow = 'var(--shadow-1)'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.boxShadow = 'none'; }}>
-            CV
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 3v12M7 11l5 5 5-5M5 21h14" />
-            </svg>
-          </a>
           </div>
         </nav>
       </div>
@@ -5712,14 +6684,30 @@ function NavBar({ stage, scrolled, onWordmark, onPortfolio, onAbout, onBlog }) {
 /* ===================================================================== */
 /* Root                                                                  */
 /* ===================================================================== */
+/* A history entry stores a snapshot of the view, and that snapshot can be
+   months old — it survives content edits and even a rebuild. So whenever a
+   view is restored, look the role and case up again by id and use today's
+   copy; the stored object is only a fallback for something since deleted. */
+const freshRole = (r) => (r && r.id ? (ROLES.find((x) => x.id === r.id) || r) : r);
+const freshPost = (p, projects) => {
+  if (!p || !p.id || !projects) return p;
+  for (const list of Object.values(projects)) {
+    const hit = (list || []).find((x) => x.id === p.id);
+    if (hit) return hit;
+  }
+  return p;
+};
+
 function App() {
   // Restore the saved view on refresh / forward-nav (history.state survives reload).
   const restored = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
-  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | admin
+  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | cv
   const [source, setSource] = React.useState(null);
-  const [role, setRole] = React.useState(restored ? (restored.role || null) : null);
-  const [post, setPost] = React.useState(restored ? (restored.post || null) : null);          // open case study
+  const [role, setRole] = React.useState(restored ? freshRole(restored.role || null) : null);
+  const [post, setPost] = React.useState(restored ? freshPost(restored.post || null, effectiveRoleProjects(loadStore())) : null); // open case study
   const [blogPost, setBlogPost] = React.useState(restored ? (restored.blogPost || null) : null);  // open blog article
+  // Latest project data for the popstate handler, which is mounted once.
+  const projectsRef = React.useRef(null);
   const [scrolled, setScrolled] = React.useState(false);
   const [answered, setAnswered] = React.useState(restored ? !['intro', 'question'].includes(restored.stage) : false); // questionnaire seen — skip it on return
   const [store, setStore] = React.useState(() => loadStore()); // localStorage content override
@@ -5729,13 +6717,29 @@ function App() {
   const currentProjects = role ? (roleProjects[role.id] || []).filter(isPublished) : [];
   const publishedBlog = effectiveBlog(store).filter(isPublished);
 
+  projectsRef.current = roleProjects;
+
   const persist = (next) => { setStore(next); saveStore(next); };
+
+  // CV page: the cases it references, resolved against the published projects
+  // so its links follow whatever the portfolio is currently showing.
+  const cvCases = {}, cvCaseRole = {};
+  Object.keys(roleProjects).forEach((rid) => {
+    (roleProjects[rid] || []).filter(isPublished).forEach((p) => {
+      if (cvCases[p.id]) return;
+      cvCases[p.id] = p;
+      cvCaseRole[p.id] = ROLES.find((r) => r.id === rid) || null;
+    });
+  });
+  const openCaseFromCV = (id) => {
+    if (cvCases[id] && cvCaseRole[id]) pushView('post', { role: cvCaseRole[id], post: cvCases[id] });
+  };
 
   // ---- Browser-history navigation -------------------------------------
   // Each forward move pushes a history entry carrying a serializable snapshot
   // of the view, so the browser's native Back/Forward (and refresh) work.
   // Sections without sub-state (intro/identity/blog/about) de-dupe on re-click.
-  const SINGLETON = ['intro', 'identity', 'blog', 'about'];
+  const SINGLETON = ['intro', 'identity', 'blog', 'about', 'cv'];
   const pushView = (next, patch = {}) => {
     const { role: r = null, post: p = null, blogPost: bp = null } = patch;
     setStage(next); setRole(r); setPost(p); setBlogPost(bp);
@@ -5768,7 +6772,6 @@ function App() {
   // New stage always starts at the top — reset the nav to transparent.
   React.useEffect(() => { setScrolled(false); }, [stage]);
 
-
   // Seed a root history entry (only on a fresh visit) so the first Back leaves
   // the site rather than getting stuck, and Back/Forward restore saved views.
   React.useEffect(() => {
@@ -5778,7 +6781,8 @@ function App() {
     }
     const onPop = (e) => {
       const s = (e.state && e.state._neve) ? e.state : { stage: 'intro', role: null, post: null, blogPost: null };
-      setStage(s.stage); setRole(s.role || null); setPost(s.post || null); setBlogPost(s.blogPost || null);
+      setStage(s.stage); setRole(freshRole(s.role || null));
+      setPost(freshPost(s.post || null, projectsRef.current)); setBlogPost(s.blogPost || null);
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
@@ -5800,7 +6804,7 @@ function App() {
       ) : null}
 
       <div style={{ position: 'absolute', inset: 0, opacity: stage === 'intro' ? 1 : 0, pointerEvents: stage === 'intro' ? 'auto' : 'none', transition: 'opacity 500ms var(--ease-calm)' }}>
-        {stage === 'intro' ? <ParticleFigure onEnter={enterFromWelcome} /> : null}
+        {stage === 'intro' ? <JourneyMap onEnter={enterFromWelcome} /> : null}
       </div>
 
       {stage === 'question' ? (
@@ -5845,7 +6849,16 @@ function App() {
       ) : null}
 
       {stage === 'about' ? (
-        <AboutPage onExplore={goPortfolio} />
+        <AboutPage onExplore={goPortfolio} onSelectTab={(id) => pushView(id)} />
+      ) : null}
+
+      {stage === 'cv' ? (
+        <CVPage
+          cases={cvCases}
+          onOpenCase={openCaseFromCV}
+          onExplore={goPortfolio}
+          onSelectTab={(id) => pushView(id)}
+        />
       ) : null}
 
     </div>
