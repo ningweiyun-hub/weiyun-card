@@ -6701,9 +6701,66 @@ const freshPost = (p, projects) => {
   return p;
 };
 
+/* Shareable URLs. Every view maps to a hash route so a case can be linked
+   directly: #/case/<id>, #/portfolio/<roleId>, #/blog/<id>, #/about, …
+   Hash (not path) routing because GitHub Pages is static — a path like
+   /case/x would 404 on a fresh load. Intro/question have no hash. #admin is
+   separate and handled by its own effect. */
+const routeHash = (s) => {
+  if (!s) return '';
+  switch (s.stage) {
+    case 'identity': return '#/portfolio';
+    case 'role': return s.role ? `#/portfolio/${s.role.id}` : '#/portfolio';
+    case 'post': return s.post ? `#/case/${s.post.id}` : '#/portfolio';
+    case 'blog': return '#/blog';
+    case 'blogpost': return s.blogPost ? `#/blog/${s.blogPost.id}` : '#/blog';
+    case 'about': return '#/about';
+    case 'cv': return '#/milestones';
+    default: return '';
+  }
+};
+const routeURL = (s) => location.pathname + location.search + routeHash(s);
+// Hash → view snapshot, resolved against the published content; null when the
+// hash isn't a route or names something that doesn't exist (or is hidden).
+const parseRoute = (hash, projects, blog) => {
+  const parts = (hash || '').replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  if (!hash || !hash.startsWith('#/') || !parts.length) return null;
+  const view = (stage, patch = {}) => ({ stage, role: null, post: null, blogPost: null, ...patch });
+  const [section, id] = parts;
+  if (section === 'portfolio') {
+    if (!id) return view('identity');
+    const role = ROLES.find((r) => r.id === id);
+    return role ? view('role', { role }) : null;
+  }
+  if (section === 'case' && id) {
+    for (const role of ROLES) {
+      const post = ((projects || {})[role.id] || []).filter(isPublished).find((p) => p.id === id);
+      if (post) return view('post', { role, post });
+    }
+    return null;
+  }
+  if (section === 'blog') {
+    if (!id) return view('blog');
+    const blogPost = (blog || []).filter(isPublished).find((p) => p.id === id);
+    return blogPost ? view('blogpost', { blogPost }) : null;
+  }
+  if (section === 'about') return view('about');
+  if (section === 'milestones') return view('cv');
+  return null;
+};
+
 function App() {
   // Restore the saved view on refresh / forward-nav (history.state survives reload).
-  const restored = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
+  // A route in the URL (shared link, edited address bar) wins unless the saved
+  // view already shows that same route — then keep it, it knows which role
+  // the case was opened from.
+  const [restored] = React.useState(() => {
+    const saved = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
+    if (typeof location === 'undefined' || !location.hash.startsWith('#/')) return saved;
+    if (saved && routeHash(saved) === location.hash) return saved;
+    const store0 = loadStore();
+    return parseRoute(location.hash, effectiveRoleProjects(store0), effectiveBlog(store0)) || saved;
+  });
   const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | cv | admin
   const [source, setSource] = React.useState(null);
   const [role, setRole] = React.useState(restored ? freshRole(restored.role || null) : null);
@@ -6711,6 +6768,7 @@ function App() {
   const [blogPost, setBlogPost] = React.useState(restored ? (restored.blogPost || null) : null);  // open blog article
   // Latest project data for the popstate handler, which is mounted once.
   const projectsRef = React.useRef(null);
+  const blogRef = React.useRef(null);
   const [scrolled, setScrolled] = React.useState(false);
   const [answered, setAnswered] = React.useState(restored ? !['intro', 'question'].includes(restored.stage) : false); // questionnaire seen — skip it on return
   const [store, setStore] = React.useState(() => loadStore()); // localStorage content override
@@ -6721,6 +6779,7 @@ function App() {
   const publishedBlog = effectiveBlog(store).filter(isPublished);
 
   projectsRef.current = roleProjects;
+  blogRef.current = effectiveBlog(store);
 
   const persist = (next) => { setStore(next); saveStore(next); };
 
@@ -6750,7 +6809,8 @@ function App() {
     const cur = history.state;
     if (cur && cur.stage === next && SINGLETON.includes(next)) return; // re-click same section
     const depth = ((cur && cur.depth) || 0) + 1;
-    history.pushState({ stage: next, role: r, post: p, blogPost: bp, depth, _neve: true }, '');
+    const snap = { stage: next, role: r, post: p, blogPost: bp, depth, _neve: true };
+    history.pushState(snap, '', routeURL(snap));
   };
   // On-page "back" buttons defer to the browser history so it stays in sync;
   // if we're at the first entry (e.g. a deep-linked refresh) fall back explicitly.
@@ -6779,11 +6839,30 @@ function App() {
   // the site rather than getting stuck, and Back/Forward restore saved views.
   React.useEffect(() => {
     if (typeof history === 'undefined') return;
-    if (!(history.state && history.state._neve)) {
-      history.replaceState({ stage: 'intro', role: null, post: null, blogPost: null, depth: 0, _neve: true }, '');
+    // The entry must hold the view actually shown — a deep link or an edited
+    // hash has no saved state, or a stale one.
+    const cur = history.state;
+    if (!(cur && cur._neve) || (location.hash.startsWith('#/') && routeHash(cur) !== location.hash)) {
+      const view = restored || { stage: 'intro', role: null, post: null, blogPost: null };
+      const snap = { stage: view.stage, role: view.role, post: view.post, blogPost: view.blogPost, depth: view.depth || 0, _neve: true };
+      history.replaceState(snap, '', location.hash === '#admin' ? undefined : routeURL(snap));
     }
     const onPop = (e) => {
-      const s = (e.state && e.state._neve) ? e.state : { stage: 'intro', role: null, post: null, blogPost: null };
+      let s = (e.state && e.state._neve) ? e.state : null;
+      if (!s && location.hash.startsWith('#/')) {
+        // Hash typed into the address bar: no saved view, so resolve the route
+        // and store it on this entry (Back still returns to the previous one).
+        const route = parseRoute(location.hash, projectsRef.current, blogRef.current);
+        if (route) {
+          s = { ...route, depth: 1, _neve: true };
+          history.replaceState(s, '', routeURL(s));
+        }
+      }
+      if (!s) {
+        s = { stage: 'intro', role: null, post: null, blogPost: null };
+        // Unknown route (typo, deleted case): show the welcome, drop the bad hash.
+        if (location.hash.startsWith('#/')) history.replaceState({ ...s, depth: 1, _neve: true }, '', routeURL(s));
+      }
       setStage(s.stage); setRole(freshRole(s.role || null));
       setPost(freshPost(s.post || null, projectsRef.current)); setBlogPost(s.blogPost || null);
     };
