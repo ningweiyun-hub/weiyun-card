@@ -3572,38 +3572,6 @@ const isPublished = (item) => !!item && item.published !== false;
 // the images/ folder. Returns '' when there's no cover.
 const coverSrc = (cover) => (!cover ? '' : (cover.startsWith('data:') ? cover : `images/${cover}`));
 
-/* ---- Questionnaire ("How did you find me?") ----
-   The single source of truth for the options, used by the welcome questionnaire
-   AND the admin stats so labels always match. Each submission is appended to
-   localStorage as { id, ts }. NOTE: this is device-local — the admin only ever
-   sees responses made in this same browser (no shared backend). */
-const SURVEY_KEY = 'weiyun_survey_v1';
-const SURVEY_OPTIONS = [
-  { id: 'friend', label: 'A friend told me' },
-  { id: 'work', label: 'Through work, a colleague or client' },
-  { id: 'linkedin', label: 'LinkedIn' },
-  { id: 'search', label: 'Found it searching' },
-  { id: 'else', label: 'Somewhere else entirely' },
-];
-const loadSurvey = () => {
-  try {
-    if (typeof localStorage === 'undefined') return [];
-    const raw = localStorage.getItem(SURVEY_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) { return []; }
-};
-const logSurvey = (id) => {
-  try {
-    const arr = loadSurvey();
-    arr.push({ id, ts: Date.now() });
-    localStorage.setItem(SURVEY_KEY, JSON.stringify(arr));
-  } catch (e) { /* quota / private mode */ }
-};
-const clearSurvey = () => {
-  try { localStorage.removeItem(SURVEY_KEY); } catch (e) { /* ignore */ }
-};
-
 /* About-me page content. Fill this in from ABOUT_TEMPLATE.md.
    `intro` and each section `p` support blank-line paragraphs and "• " bullets. */
 const ABOUT = {
@@ -5796,7 +5764,7 @@ function CVPage({ cases = {}, onOpenCase, onExplore, onSelectTab }) {
   );
 }
 
-/* App shell: intro → question → identity deck → role → post */
+/* App shell: intro → identity deck → role → post */
 const NEVE = window.NEVEDesignSystem_bf520b || {};
 const { Button } = NEVE;
 
@@ -5808,72 +5776,6 @@ function Arrow({ dir = 'right' }) {
       style={{ transform: dir === 'left' ? 'scaleX(-1)' : 'none' }}>
       <path d="M5 12h14M13 6l6 6-6 6" />
     </svg>
-  );
-}
-
-/* ===================================================================== */
-/* Page 2 — how did you find me                                          */
-/* ===================================================================== */
-function QuestionCard({ onSubmit }) {
-  const [val, setVal] = React.useState(null);
-  const options = SURVEY_OPTIONS;
-  return (
-    <div data-screen-label="Question — how did you find me" style={{
-      position: 'absolute', inset: 0, overflowY: 'auto',
-      background: 'radial-gradient(120% 90% at 50% 12%, #FBFAF8 0%, var(--neve-warm-ivory) 70%)',
-    }}>
-      <div style={{ minHeight: '100%', display: 'grid', placeItems: 'center', padding: 'clamp(72px, 10vh, 96px) 24px 48px' }}>
-      <div className="neve-rise" style={{
-        width: 'min(480px, 100%)', background: 'var(--surface-card)',
-        border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)',
-        boxShadow: 'var(--shadow-2)', padding: 'clamp(28px, 5vw, 44px)',
-      }}>
-        <div className="neve-eyebrow" style={{ color: 'var(--neve-dust-blue)' }}>Before we go in</div>
-        <h2 style={{
-          margin: '12px 0 8px', fontFamily: 'var(--font-display)', fontWeight: 400,
-          fontSize: 'clamp(28px, 4.5vw, 38px)', lineHeight: 1.1, color: 'var(--neve-ink-navy)',
-        }}>How did you find me?</h2>
-        <p style={{
-          margin: '0 0 26px', fontFamily: 'var(--font-body)', fontSize: 15,
-          lineHeight: 1.5, color: 'var(--text-secondary)',
-        }}>Just curious. It quietly helps me know who's stopping by.</p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {options.map((o) => {
-            const active = val === o.id;
-            return (
-              <label key={o.id} onClick={() => setVal(o.id)} style={{
-                display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer',
-                padding: '13px 14px', borderRadius: 'var(--radius-sm)',
-                border: `1px solid ${active ? 'var(--neve-ink-navy)' : 'transparent'}`,
-                background: active ? 'var(--surface-sunken)' : 'transparent',
-                transition: 'var(--transition-fast)',
-              }}
-              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'var(--surface-hover)'; }}
-              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
-                <span style={{
-                  width: 20, height: 20, flexShrink: 0, borderRadius: '50%',
-                  display: 'grid', placeItems: 'center',
-                  border: `1px solid ${active ? 'var(--action-primary)' : 'var(--border-strong)'}`,
-                  transition: 'var(--transition-fast)',
-                }}>
-                  {active ? <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--action-primary)' }} /> : null}
-                </span>
-                <span style={{ fontFamily: 'var(--font-body)', fontSize: 15, color: 'var(--text-primary)' }}>{o.label}</span>
-              </label>
-            );
-          })}
-        </div>
-
-        <div style={{ marginTop: 28 }}>
-          <Button variant="primary" size="lg" fullWidth disabled={!val}
-            onClick={() => onSubmit(val)} iconRight={<Arrow />}>
-            Continue
-          </Button>
-        </div>
-      </div>
-      </div>
-    </div>
   );
 }
 
@@ -6704,8 +6606,11 @@ const freshPost = (p, projects) => {
 /* Shareable URLs. Every view maps to a hash route so a case can be linked
    directly: #/case/<id>, #/portfolio/<roleId>, #/blog/<id>, #/about, …
    Hash (not path) routing because GitHub Pages is static — a path like
-   /case/x would 404 on a fresh load. Intro/question have no hash. #admin is
+   /case/x would 404 on a fresh load. Intro has no hash. #admin is
    separate and handled by its own effect. */
+// Older visits may have left a removed 'question' (entry questionnaire) view in
+// history.state; treat it as the identity deck so Back/refresh still render.
+const upgradeView = (s) => (s && s.stage === 'question' ? { ...s, stage: 'identity' } : s);
 const routeHash = (s) => {
   if (!s) return '';
   switch (s.stage) {
@@ -6755,14 +6660,13 @@ function App() {
   // view already shows that same route — then keep it, it knows which role
   // the case was opened from.
   const [restored] = React.useState(() => {
-    const saved = (typeof history !== 'undefined' && history.state && history.state._neve) ? history.state : null;
+    const saved = (typeof history !== 'undefined' && history.state && history.state._neve) ? upgradeView(history.state) : null;
     if (typeof location === 'undefined' || !location.hash.startsWith('#/')) return saved;
     if (saved && routeHash(saved) === location.hash) return saved;
     const store0 = loadStore();
     return parseRoute(location.hash, effectiveRoleProjects(store0), effectiveBlog(store0)) || saved;
   });
-  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | question | identity | role | post | blog | blogpost | about | cv | admin
-  const [source, setSource] = React.useState(null);
+  const [stage, setStage] = React.useState(restored ? restored.stage : 'intro'); // intro | identity | role | post | blog | blogpost | about | cv | admin
   const [role, setRole] = React.useState(restored ? freshRole(restored.role || null) : null);
   const [post, setPost] = React.useState(restored ? freshPost(restored.post || null, effectiveRoleProjects(loadStore())) : null); // open case study
   const [blogPost, setBlogPost] = React.useState(restored ? (restored.blogPost || null) : null);  // open blog article
@@ -6770,7 +6674,6 @@ function App() {
   const projectsRef = React.useRef(null);
   const blogRef = React.useRef(null);
   const [scrolled, setScrolled] = React.useState(false);
-  const [answered, setAnswered] = React.useState(restored ? !['intro', 'question'].includes(restored.stage) : false); // questionnaire seen — skip it on return
   const [store, setStore] = React.useState(() => loadStore()); // localStorage content override
 
   // Effective (admin-edited or default) content; public views show only published.
@@ -6822,8 +6725,8 @@ function App() {
   const goPortfolio = () => pushView('identity');
   const goWelcome = () => pushView('intro');
   const goBlog = () => pushView('blog');
-  // From the welcome page: first time → questionnaire; afterwards → straight to the deck.
-  const enterFromWelcome = () => pushView(answered ? 'identity' : 'question');
+  // From the welcome page: straight to the identity deck.
+  const enterFromWelcome = () => pushView('identity');
 
   // Track scroll of whichever stage's scroll container is active (scroll doesn't
   // bubble, so listen in the capture phase to catch any descendant scroller).
@@ -6842,13 +6745,13 @@ function App() {
     // The entry must hold the view actually shown — a deep link or an edited
     // hash has no saved state, or a stale one.
     const cur = history.state;
-    if (!(cur && cur._neve) || (location.hash.startsWith('#/') && routeHash(cur) !== location.hash)) {
+    if (!(cur && cur._neve) || cur.stage === 'question' || (location.hash.startsWith('#/') && routeHash(cur) !== location.hash)) {
       const view = restored || { stage: 'intro', role: null, post: null, blogPost: null };
       const snap = { stage: view.stage, role: view.role, post: view.post, blogPost: view.blogPost, depth: view.depth || 0, _neve: true };
       history.replaceState(snap, '', location.hash === '#admin' ? undefined : routeURL(snap));
     }
     const onPop = (e) => {
-      let s = (e.state && e.state._neve) ? e.state : null;
+      let s = (e.state && e.state._neve) ? upgradeView(e.state) : null;
       if (!s && location.hash.startsWith('#/')) {
         // Hash typed into the address bar: no saved view, so resolve the route
         // and store it on this entry (Back still returns to the previous one).
@@ -6888,10 +6791,6 @@ function App() {
       <div style={{ position: 'absolute', inset: 0, opacity: stage === 'intro' ? 1 : 0, pointerEvents: stage === 'intro' ? 'auto' : 'none', transition: 'opacity 500ms var(--ease-calm)' }}>
         {stage === 'intro' ? <JourneyMap onEnter={enterFromWelcome} /> : null}
       </div>
-
-      {stage === 'question' ? (
-        <QuestionCard onSubmit={(s) => { setSource(s); logSurvey(s); setAnswered(true); pushView('identity'); }} />
-      ) : null}
 
       {stage === 'identity' ? (
         <IdentityDeck onChoose={(r) => pushView('role', { role: r })} />
