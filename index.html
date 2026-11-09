@@ -3880,22 +3880,17 @@ Timeline: From March to August 2024, my work covered requirements interviews wit
 
 Team: I worked with one engineer, and we shared the PM work.
 
-Outcome: The CRM reached QA. It used shared data, modules each school could adapt and defined responsibilities for each role. The CRM did not launch, so there are no usage results.`,
+Outcome: The CRM reached QA, with shared data, modules each school could adapt, and defined responsibilities for each role. It did not launch, so there are no usage results.`,
     sections: [
       { h: 'Each School Worked Differently', p: `Ohyoung, a language-school brand, needed its own CRM for several schools. Staff handled registration, scheduling and student records by hand. Each school did this differently, and none of it had been formalised as a shared process, so there was no agreed workflow to digitise yet.` },
       { h: 'Why I Chose a Shared Core', p: `I ran requirements interviews with stakeholders, several rounds of user interviews and observation in the schools, and workshops with the internal teams. The schools worked differently, but the organisation needed one consistent set of data.
 
-One option was a single fixed workflow for every school. It would have given one clear structure, but it risked ignoring how the schools actually worked. I proposed keeping the organisation's data in one core, with modules each school could adapt to its own way of working.` },
-      { h: 'Removing Steps Before Designing Screens', p: `Before designing any interface, I ran workshops to cut redundant manual steps, so the CRM would not simply copy them onto screens. Two decisions came out of this:
-
-• Enter information once: I designed the workflow so staff would enter information once and reuse it where needed, rather than typing it again.
-• Define each role's tasks: I defined each role's responsibilities in the system, so ownership of each task was explicit.` },
+One option was a single fixed workflow for every school. That would have given one clear structure, but it risked ignoring how the schools actually worked. I proposed keeping the organisation's data in one core, with modules each school could adapt to its own way of working.` },
+      { h: 'Removing Steps Before Designing Screens', p: `Before designing any interface, I ran workshops to cut redundant manual steps, so the CRM would not simply copy them onto screens. I designed the workflow so staff would enter information once and reuse it where needed, rather than typing it again. I also defined each role's responsibilities in the system, so ownership of each task was explicit.` },
       { type: 'image', src: 'product-what-are-the-user-needs-3.jpg' },
       { type: 'image', src: 'product-what-are-the-user-needs-6.jpg', caption: 'Before' },
       { type: 'image', src: 'product-what-are-the-user-needs-7.jpg', caption: 'After' },
-      { h: 'What Reached QA', p: `The CRM was designed to give staff one place to register students and keep records, instead of manual entry that differed from school to school. It reached QA but was paused before launch.
-
-At the start we set a target of making design-to-engineering iteration at least 10% faster by working from a shared design system; it was not measured. That system is covered in a separate case, "One Component Library for a Team of Two".` },
+      { p: `The CRM was designed to bring student registration and records into one place, replacing manual entry that varied between schools. It reached QA, but the company paused the project in early 2025 to prioritise other work, so it did not launch. At the start, we aimed to cut design-to-engineering iteration time by at least 10% by working from a shared design system, but did not measure whether we achieved it. That system is covered in a separate case, "One Component Library for a Team of Two".` },
     ],
     quote: null,
   },
@@ -3919,10 +3914,10 @@ Collaborators: stakeholders across departments, including the marketing team.
 
 Outcome: Two assumed user roles became five, and the product direction changed from basic class booking to e-learning combined with CRM-style student support. Phase 1 launched on this basis.`,
     sections: [
-      { h: 'Course Selection Did Not Match Academic Workflows', p: `YesOnline is an e-learning system. When I began this work, the initial development phase was complete, but course selection did not match how the academic side actually worked, so students could not use it as intended.
+      { h: 'Course Selection Did Not Match Academic Workflows', p: `YesOnline is an e-learning system. When I began this work, the initial development phase was already complete, but course selection did not match how the academic side actually worked. Students could not use it as intended.
 
 The team had defined only two user roles: internal staff and students. The product was framed as a simple e-learning system where students booked classes and staff managed orders and schedules.` },
-      { h: 'Departments Disagreed About Who the Product Served', p: `I interviewed teachers, students and stakeholders, held requirements discussions with the marketing team and talked with colleagues across departments. I found that departments disagreed about who the product served and what it was for.
+      { h: 'Departments Disagreed About Who the Product Served', p: `I interviewed teachers, students and stakeholders, held requirements discussions with the marketing team and talked with colleagues across departments. Departments disagreed about who the product served and what it was for.
 
 I prioritised reaching agreement on who the product served and what each role needed before redefining the system.` },
       { type: 'image', src: 'ux-redefining-users-and-workflows-3.jpg' },
@@ -3960,16 +3955,12 @@ Team: I led the design, working with one junior designer, and worked with cross-
 Outcome: The dashboard launched. It was used mainly by senior executives across the company, and covered the data each department needed.`,
     sections: [
       { h: 'Scattered Data, No Clear Link to Goals', p: `This was an internal monitoring system, used mainly by senior executives, to help them follow performance across departments and track key metrics. Before it, important business information sat in different sources, so it was hard for teams to review it together or connect daily operations with business goals.` },
-      { h: "How I Defined the Dashboard's Priorities", p: `I worked backwards from business goals to define which metrics mattered, how different teams would read them and which decisions the dashboard needed to support.` },
-      { h: 'Three Levels of Detail', p: `I organised the dashboard into three levels of detail, using hierarchy and visual grouping:
-
-• High-level indicators for a quick scan.
-• Trend charts to show changes over time.
-• Detailed data sections for investigation.
+      { h: 'Choosing which metrics to show', p: `I worked backwards from business goals to define which metrics mattered, how different teams would read them and which decisions the dashboard needed to support.` },
+      { h: 'From overview to detail', p: `I organised the dashboard into three levels of detail, using hierarchy and visual grouping. High-level indicators were there for a quick scan, trend charts to show changes over time, and detailed data sections for when someone needed to investigate.
 
 The aim was to take people from an overview to the detail they needed, instead of showing everything at once.` },
       { type: 'image', src: 'ux-making-business-goals-visible-through-da-3.jpg' },
-      { h: 'My Role Through to Launch', p: `I defined the user flow and the visual language of the data views. During implementation, I reviewed design consistency and supported communication between teams.` },
+      { p: `I defined the user flow and the visual language of the data views. During implementation, I reviewed design consistency and supported communication between teams.` },
     ],
     quote: null,
   },
@@ -4000,7 +3991,7 @@ Status: An iOS app. The build is still on TestFlight, but the backend is off, so
 Testing so far: I sent builds to testers and iterated on the AI's responses. I have also compared AI-generated content with human-curated content for this kind of planning. There are no metrics yet.`,
     sections: [
       { h: 'A Goal in the User\'s Own Words', p: `A user describes a long-term goal in their own words. Pace, the AI coach, turns it into a weekly direction, a measurable finish line for that week, and an action they can start today.` },
-      { h: 'My AI Interaction Design Questions', p: `I focused the AI interaction design on six questions:
+      { h: 'Questions I kept coming back to', p: `I kept coming back to six questions:
 
 • what the AI should infer from a free-text goal
 • what the user should confirm
@@ -4011,20 +4002,25 @@ Testing so far: I sent builds to testers and iterated on the AI's responses. I h
       { h: 'The Original App and First AI Prototype', p: `86400 began as a time-awareness app built around the 86,400 seconds in a day. It used pressure: a countdown that intensified through the evening, one Anchor task per day, and a companion pet that paid for an unfinished Anchor at midnight.
 
 The first AI prototype kept much of the control on the system side. Pace created a weekly direction and one action for today. Onboarding came in two versions: one showed what Pace understood and let the user edit the plan field by field, the other let them adjust it by talking to Pace. Finishing a task meant passing a completion check and adding proof (a photo, a link, a note, or self-confirmation only when nothing stronger existed), then an end-of-day check-in before tomorrow's action was created.` },
-      { h: 'What I Changed and Why', p: `• I removed the countdown and changed the companion's role. I wanted the product to make starting easier, so I removed the escalating countdown and stopped putting the companion pet at risk. The companion now gives support and feedback, and is never used to shame or threaten.
-• No more proof. The AI can help structure the work, but it should not become the authority on whether the user succeeded. Users now mark tasks complete or incomplete themselves.
-• No separate end-of-day check-in. Finishing all main tasks now settles the day and creates the next action. Mood, notes and reflections are optional.
-• Not one action per day for every goal. That rule did not fit goals with independent tracks, such as language practice alongside job applications. Now one next action is highlighted at a time, without forcing every day down to one main task.
-• I removed field-by-field editing from onboarding. Guided conversation is now the only way in.` },
-      { h: 'How Pace Works Now', p: `• Pace asks follow-up questions only when missing information would change the plan. It extracts the outcome, success criteria, current baseline, deadline, milestones, dependencies, available time and constraints from the user's own words. It asks one question at a time, never more than two, each with up to three quick answers plus Something else.
-• I check whether Pace keeps what the user said. I treat dropped KPIs, deadlines or constraints, and confusion between a baseline and an outcome, as AI failures. IELTS speaking at 5.5 today is a baseline; an IELTS overall score of 8 is the outcome.
-• I put milestones and dependencies behind View plan details. The plan summary shows the outcome, success criteria, deadline, weekly rhythm and near-term direction.
-• I limit conversational correction to onboarding. During onboarding, the user tells Pace what it misunderstood or missed, and Pace changes only that. After onboarding, changes use structured controls (sessions per week, daily time, adding or removing main tasks) instead of reopening the conversation.
-• The user decides what happened. Tasks are marked Complete, Incomplete or Skip for now. After an incomplete or low-capacity day, Pace scales the next action down.` },
-      { h: 'What I Am Testing Next', p: `• How much belongs in the first layer of the plan summary, and how much can wait behind details.
-• The order and wording of Pace's follow-up questions.
-• Whether people move from a confirmed plan to actually starting their first action.
-• How many main tasks a day can hold before one highlighted next action stops being enough. This is still an open decision.` },
+      { h: 'What I Changed and Why', p: `I wanted the product to make starting easier, so I removed the escalating countdown and stopped putting the companion pet at risk. The companion now gives support and feedback, and is never used to shame or threaten.
+
+I also dropped the proof requirement. The AI can help structure the work, but it should not become the authority on whether the user succeeded. Users now mark tasks complete or incomplete themselves.
+
+There is no separate end-of-day check-in. Finishing all main tasks now settles the day and creates the next action. Mood, notes and reflections are optional.
+
+I moved away from one action per day for every goal. That rule did not fit goals with independent tracks, such as language practice alongside job applications. Now one next action is highlighted at a time, without forcing every day down to one main task.
+
+I removed field-by-field editing from onboarding. Guided conversation is now the only way in.` },
+      { h: 'How Pace Works Now', p: `Pace asks follow-up questions only when missing information would change the plan. It extracts the outcome, success criteria, current baseline, deadline, milestones, dependencies, available time and constraints from the user's own words. It asks one question at a time, never more than two, each with up to three quick answers plus Something else.
+
+I check whether Pace keeps what the user said. I treat dropped KPIs, deadlines or constraints, and confusion between a baseline and an outcome, as AI failures. IELTS speaking at 5.5 today is a baseline; an IELTS overall score of 8 is the outcome.
+
+I put milestones and dependencies behind View plan details. The plan summary shows the outcome, success criteria, deadline, weekly rhythm and near-term direction.
+
+I limit conversational correction to onboarding. During onboarding, the user tells Pace what it misunderstood or missed, and Pace changes only that. After onboarding, changes use structured controls (sessions per week, daily time, adding or removing main tasks) instead of reopening the conversation.
+
+Users mark tasks Complete, Incomplete or Skip for now. After an incomplete or low-capacity day, Pace scales the next action down.` },
+      { p: `Next, I want to test how much belongs in the first layer of the plan summary and how much can wait behind details, the order and wording of Pace's follow-up questions, and whether people move from a confirmed plan to actually starting their first action. I also want to look at how many main tasks a day can hold before one highlighted next action stops being enough. That last question is still an open decision.` },
     ],
     quote: 'How much should the AI decide before the user loses control?',
   },
@@ -4053,12 +4049,12 @@ Team: I worked closely with the engineering team.
 
 Outcome: One system in place of three device-specific sets, a rebuilt button library, and Storybook used as a shared reference by design and engineering.`,
         sections: [
-          { h: 'Three Sets of Assets, Drifting Apart', p: `The previous design system had three separate sets of assets for different devices. Even the colour specifications no longer matched between the mobile and web versions, which made the brand hard to keep consistent.` },
+          { h: 'Asset sets that had drifted apart', p: `The previous design system had three separate sets of assets for different devices. Even the colour specifications no longer matched between the mobile and web versions, which made the brand hard to keep consistent.` },
           { type: 'image', src: 'product-creating-a-lean-design-system-2.jpg' },
           { h: 'Inconsistent Button Components', p: `When the team tried to speed up development, the fragmented button components led to visible inconsistencies in the frontend. I audited the existing styles and kept new designs backward-compatible with them, while working to a tight timeline set by leadership and engineering.` },
-          { h: 'Buttons First', p: `I started the consolidation with the button library, because buttons were the most-used elements.` },
+          { h: 'Starting with buttons', p: `I started the consolidation with the button library, because buttons were the most-used elements.` },
           { type: 'image', src: 'product-creating-a-lean-design-system-5.jpg' },
-          { h: 'Introducing Storybook', p: `We introduced Storybook to stop redundant variants, such as "twin buttons" with small, unapproved differences. Storybook gave design and engineering a shared component reference, and let both teams build and test components in isolation.
+          { p: `We introduced Storybook to stop redundant variants, such as "twin buttons" with small, unapproved differences. Storybook gave design and engineering a shared component reference, and let both teams build and test components in isolation.
 
 Working from one set of components made it quicker for me to put together high-fidelity prototypes. The product work around the system also included usability testing and A/B testing.` },
         ],
@@ -4086,7 +4082,7 @@ Outcome: I built a Figma component library with shared foundations that the engi
           { h: 'Why the CRM Needed Shared Patterns', p: `This is the design system behind the Ohyoung CRM (see the case "Designing a CRM Around Different School Workflows"), a new product for language schools whose workflows differed and were largely manual. The CRM was meant to support registration and reporting, where staff enter much of the data by hand.
 
 Interviews showed that staff work in a high-intensity environment and that data-entry mistakes are costly for them. For the new CRM, I defined shared patterns to keep screens consistent from the start.` },
-          { h: 'Three Principles for Data-Heavy Screens', p: `I set three principles to guide my screen and component decisions:
+          { h: 'Principles for data-heavy screens', p: `For these screens, I prioritised readable data, consistent actions and mistakes staff could correct:
 
 • Readable data: on data-heavy screens, I prioritised clear labels and hierarchy over decoration.
 • Consistent actions: the same action should look and behave the same in every module. If a "Submit" button looks a certain way in Registration, it looks and works the same way in Reporting.
@@ -4096,13 +4092,12 @@ Interviews showed that staff work in a high-intensity environment and that data-
           { type: 'image', src: 'product-why-does-a-design-system-matter-5.jpg' },
           { h: 'How I Organised the Component Library', p: `I built reusable components to use across the CRM screens. I drew on Atomic Design to organise them, from single elements such as a field, a button or a label up to page-level layouts that could be reused across screens.
 
-• Foundations: a type scale, a colour palette and an 8px grid, shared by every screen. Readability guided the palette, and I checked its colour contrast with an accessibility checker plugin in Figma.
-• The library: a central Figma component library for the engineer to build the CRM from.` },
+Every screen shared a type scale, a colour palette and an 8px grid. Readability guided the palette, and I checked its colour contrast with an accessibility checker plugin in Figma. The library itself sat in Figma, as a central set of components for the engineer to build the CRM from.` },
           { type: 'image', src: 'product-why-does-a-design-system-matter-7.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-8.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-9.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-10.jpg' },
-          { h: 'Where It Stopped', p: `The CRM reached QA but was paused before launch. We had set a target of making design-to-engineering iteration at least 10% faster with this shared system; it was not measured.` },
+          { p: `The engineer built the CRM from this library. It reached QA, but the company paused the project in early 2025 to prioritise other work, so it did not launch. We had set a target of making design-to-engineering iteration at least 10% faster with this shared system, but did not measure whether we achieved it.` },
         ],
         quote: null,
       },
@@ -4127,15 +4122,11 @@ Interviews showed that staff work in a high-intensity environment and that data-
       tags: ['Built with AI', 'Internal Tool', 'Small Business'],
       summary: 'A working tool for running my craft workshops: sessions, venues, clients, budgets and templates.',
       blog: {
-        intro: `Role: My own tool. I designed it and built it with AI coding tools.
-
-Year: 2026.
-
-Status: A working single-file web app for my own workshops.`,
+        intro: `I designed this and built it with AI coding tools in 2026. It is a working single-file web app for my own workshops.`,
         sections: [
-          { h: 'What I Wanted to Change', p: `Whether one tool could replace the scattered notes, spreadsheets and repeated messages behind my craft workshops.` },
-          { h: 'What I Made', p: `A single-file web app, built with AI coding tools, covering upcoming sessions, venue management, preparation tasks, client records, budgets, reusable material lists and email templates. The app runs in the browser and keeps data locally, with no backend or install.` },
-          { h: 'Why I Kept It Simple', p: `Alongside running the workshops, I had to track who was coming, what to prepare and what was still pending. Running workshops on my own, I kept the setup simple: one file, with data kept in the browser.` },
+          { p: `I run craft workshops on my own, and used to track them with notes, spreadsheets and repeated messages: who was coming, what to prepare, and what was still pending.
+
+I used AI coding tools to build a single-file web app covering upcoming sessions, venue management, preparation tasks, client records, budgets, reusable material lists and email templates. It runs in the browser, keeps data locally, and has no backend or install.` },
         ],
         quote: null,
       },
@@ -4151,15 +4142,11 @@ Status: A working single-file web app for my own workshops.`,
       summary: 'A speaking-practice tool: pick a theme, draw a random question, and answer before the timer ends.',
       link: 'https://ningweiyun-hub.github.io/small-talk-practice/',
       blog: {
-        intro: `Role: My own project. I designed it and built it with AI coding tools.
-
-Year: 2026.
-
-Status: A live web page.`,
+        intro: `I designed and built Small Talk Boxes with AI coding tools in 2026. It is a live web page.`,
         sections: [
-          { h: 'What I Wanted to Explore', p: `A low-pressure way to practise answering in English on the spot, instead of preparing perfect answers in advance.` },
-          { h: 'What I Made', p: `A live web page with 212 questions across seven themes, including job interviews. You pick a theme, draw a question and answer before the timer ends, with a short answer tip for each theme.` },
-          { h: 'Why I Chose These Settings', p: `I wanted to keep practice manageable with a random prompt and a clear time limit. I gave interview questions 90 seconds and a STAR-method tip, and everyday small talk 60 seconds.` },
+          { p: `I wanted a low-pressure way to practise answering in English on the spot, instead of preparing perfect answers in advance.
+
+The page has 212 questions across seven themes, including job interviews. You pick a theme, draw a question and answer before the timer ends. Each theme has a short answer tip. Interview questions get 90 seconds and a STAR-method tip; everyday small talk gets 60 seconds.` },
         ],
         quote: null,
       },
@@ -4175,15 +4162,11 @@ Status: A live web page.`,
       summary: 'A meal spinner connected to a pantry tracker and a recipe list, made to help me decide faster and forget less food.',
       link: 'https://ningweiyun-hub.github.io/ns-food-spinner/',
       blog: {
-        intro: `Role: My own project. I designed it and built it with AI coding tools.
-
-Year: 2026.
-
-Status: A live prototype.`,
+        intro: `I designed and built Food Spinner with AI coding tools in 2026. It is a live prototype.`,
         sections: [
-          { h: 'What I Wanted to Explore', p: `I wanted to explore two everyday problems: taking too long to decide what to eat, and forgetting ingredients at home until they went to waste.` },
-          { h: 'What I Made', p: `A live prototype with three connected parts: a meal spinner for quick decisions, a pantry tracker for fridge and cupboard items, and a recipe collection.` },
-          { h: 'Why I Connected the Parts', p: `I wanted to connect meal choices to the ingredients I already had, so I built the meal spinner, pantry tracker and recipe collection as connected parts of the prototype.` },
+          { p: `I was trying to deal with two everyday problems: taking too long to decide what to eat, and forgetting ingredients at home until they went to waste.
+
+The prototype connects a meal spinner for quick decisions, a pantry tracker for fridge and cupboard items, and a recipe collection. I wanted meal choices to relate to the ingredients I already had.` },
         ],
         quote: null,
       },
@@ -4199,26 +4182,17 @@ Status: A live prototype.`,
       cover: 'creative-harpist-cover.jpg',
       duo: ['#0F172A', '#B8B4D8'],
       tags: ['Generative art', 'Creative coding', 'Sound', 'Interaction'],
-      summary: 'I built a web page where you play a harp with the mouse. Moving up or down selects the note; moving sideways plays it.',
+      summary: 'A harp you play with your mouse. Move up or down to pick a note; move sideways to play it.',
       blog: {
-        intro: `Role: My own project. I designed the interaction and the sound, cut out the characters and built the page. The characters themselves are AI-generated.
-
-Year: 2026.
-
-There is nothing to click. Moving the mouse sideways plays a note; its height sets the pitch. An angel plays above a city of clouds, and you can swap her for a crocodile.`,
+        intro: `This was a class project. The theme was angels, so an angel sits above a city of clouds with a harp. You can swap her for a crocodile, but playing the harp only takes mouse movement.`,
         sections: [
-          { h: 'No Buttons, So the First Second Matters', p: `There is no play button and nothing to aim at. The only control is where your mouse is, and the only answer is sound. If you sit still you hear nothing and the page looks like a picture, so the first second has to make you move.
+          { p: `The sound and the way you play it began as a classmate's idea. After we teamed up, we reworked both into the version here now. I did most of the cut-outs, and adapted the page from my classmate's original.
 
-I kept the rule simple. Height picks the note, and moving sideways plays it. I wanted people to work it out just by moving, without needing the line that explains it.` },
+Height picks the note; moving sideways plays it, and the page stays silent until you move.` },
           { type: 'video', src: 'harpist-demo.mp4', poster: 'creative-harpist-cover.jpg', caption: 'Moving the mouse across the clouds. The harp follows.' },
-          { h: 'Getting the Player Out of the Picture', p: `The angel and the crocodile are AI-generated. I cut them out frame by frame so they can float over a background that is not theirs.
+          { p: `The angel and the crocodile are AI-generated. They had to be cut out frame by frame so they could float over a background that was not theirs. Early versions dragged half a painted scene along with them: sky, pillars, a leftover tail. After a few rounds of cleaning the edges, each of which left something new to fix, I asked for a full-body character on a plain background. The angel came out clean the first time after that. The crocodile only worked once I stopped repairing the old one and asked for a new picture.
 
-The first tries went badly. A character generated inside its own painted scene drags that scene along with it: sky, pillars, half a tail. I went through four rounds of fixing the edges, and each round left something new to fix.
-
-Then I changed how I requested the source image. I asked for the character on its own, full body, on a plain background, and then it cut out cleanly. The angel worked that way first time. The crocodile only worked once I stopped repairing and asked for a new image.` },
-          { h: 'Why I Made It', p: `Nobody asked for this one. I wanted to know if a web page could feel like an instrument instead of a screen, and whether sound and movement on their own could hold someone there.
-
-I kept the notes on a fixed scale. Next I want to explore a drifting scale, so someone who stays a while hears something the person who leaves after ten seconds does not.` },
+The notes sit on a fixed scale for now. Next I want to try a scale that changes over time.` },
         ],
         quote: null,
       },
@@ -5265,10 +5239,10 @@ function BlogPost({ role, post, backLabel, onBack }) {
             return (
               <React.Fragment key={i}>
                 <section style={{ marginBottom: 34 }}>
-                  <h2 style={{
+                  {s.h ? <h2 style={{
                     margin: '0 0 10px', fontFamily: 'var(--font-display)', fontWeight: 400,
                     fontSize: 27, lineHeight: 1.15, color: 'var(--neve-ink-navy)',
-                  }}>{s.h}</h2>
+                  }}>{s.h}</h2> : null}
                   <RichText text={s.p} size={16} lineHeight={1.7} marginBottom={14} />
                 </section>
                 {showQuote ? (
