@@ -3866,33 +3866,36 @@ const CV = {
 /* Shared cases — each appears in both the Product and Research decks (one source, no copies). */
 const OHYOUNG_CASE = {
   id: 'ohyoung-b2b-crm',
-  title: 'Designing a Product Where No Workflow Existed',
+  title: 'Designing a CRM Around Different School Workflows',
   project: 'Ohyoung B2B & CRM Systems',
   year: '2024–2025',
   cover: 'product-what-are-the-user-needs.jpg',
   duo: ['#1E293B', '#4C6B8A'],
   tags: ['Business Strategy', 'User Research', 'User Flow', '0→1 Product'],
-  summary: 'Language schools ran on unformalized manual processes. I defined a 0→1 CRM each school could adapt.',
+  summary: 'Each Ohyoung language school handled registration and student records by hand, in its own way, with no agreed workflow across the organisation. I worked out a shared workflow with the teams first, then designed a new CRM around it.',
   blog: {
-    intro: `A 0→1 B2B CRM for multiple language schools. There was no tool to improve: internal teams ran registration, scheduling and student records through manual processes that had never been formalized, and each school did it differently. The system had to keep data consistent across the organization while still fitting schools that operated in different ways.`,
+    intro: `Design role: Senior Product Designer and the only designer on the project. I led interviews and observation, ran the workshops, defined the workflows and designed the interface.
+
+Timeline: From March to August 2024, my work covered requirements interviews with stakeholders, user interviews, workflow design and interface design. QA began around December 2024 and went through one user role at a time, mainly with internal staff, as they were the main users of much of the system. The company paused the project in early 2025 to prioritise other projects, so the CRM did not launch.
+
+Team: I worked with one engineer, and we shared the PM work.
+
+Outcome: The CRM reached QA. It used shared data, modules each school could adapt and defined responsibilities for each role. The CRM did not launch, so there are no usage results.`,
     sections: [
-      { h: 'A Missing Workflow, Not a Bad Tool', p: `The obvious scope was to digitize the paperwork. But the process had never been formalized, so there was no agreed workflow to digitize. The project became defining that workflow first, then building the CRM around efficiency, role clarity and long-term growth.` },
-      { h: 'Setting a Goal Without a Baseline', p: `With no existing system, there was nothing to audit or measure against, so we set the goal and the bar up front:
+      { h: 'Each School Worked Differently', p: `Ohyoung, a language-school brand, needed its own CRM for several schools. Staff handled registration, scheduling and student records by hand. Each school did this differently, and none of it had been formalised as a shared process, so there was no agreed workflow to digitise yet.` },
+      { h: 'Why I Chose a Shared Core', p: `I ran requirements interviews with stakeholders, several rounds of user interviews and observation in the schools, and workshops with the internal teams. The schools worked differently, but the organisation needed one consistent set of data.
 
-• Goal: a centralized registration framework to replace labor-intensive manual entry.
-• Target: improve operational efficiency by at least 10% from day one of the rollout.` },
-      { h: 'One Standard, Different Schools', p: `Multiple rounds of interviews and observation across the schools, plus cross-functional workshops, showed a conflict: each school ran its operations differently, but the organization needed one consistent set of data.
+One option was a single fixed workflow for every school. It would have given one clear structure, but it risked ignoring how the schools actually worked. I proposed keeping the organisation's data in one core, with modules each school could adapt to its own way of working.` },
+      { h: 'Removing Steps Before Designing Screens', p: `Before designing any interface, I ran workshops to cut redundant manual steps, so the CRM would not simply copy them onto screens. Two decisions came out of this:
 
-• One fixed workflow for every school would keep data consistent, but it would not fit how the schools worked.
-• Instead, I proposed a flexible standard: a core framework that protects data integrity, with modules that adapt to each school.` },
-      { h: 'Removing Steps Before Designing Screens', p: `I led workshops to remove redundant manual steps before they reached the interface. Three decisions followed:
-
-• Write once, use everywhere: data is entered at one point and reused, not retyped.
-• Clear ownership: each role gets defined digital responsibilities, replacing the who-does-what confusion.
-• Room to grow: a structure that can scale with the organization.` },
+• Enter information once: I designed the workflow so staff would enter information once and reuse it where needed, rather than typing it again.
+• Define each role's tasks: I defined each role's responsibilities in the system, so ownership of each task was explicit.` },
       { type: 'image', src: 'product-what-are-the-user-needs-3.jpg' },
       { type: 'image', src: 'product-what-are-the-user-needs-6.jpg', caption: 'Before' },
       { type: 'image', src: 'product-what-are-the-user-needs-7.jpg', caption: 'After' },
+      { h: 'What Reached QA', p: `The CRM was designed to give staff one place to register students and keep records, instead of manual entry that differed from school to school. It reached QA but was paused before launch.
+
+At the start we set a target of making design-to-engineering iteration at least 10% faster by working from a shared design system; it was not measured. That system is covered in a separate case, "One Component Library for a Team of Two".` },
     ],
     quote: null,
   },
@@ -4032,33 +4035,42 @@ To ensure the system remains maintainable and scalable, we introduced Storybook 
     },
     {
       id: 'why-design-system-matters',
-      title: 'Product Patterns for a CRM Built from Zero',
+      title: 'One Component Library for a Team of Two',
       project: 'Ohyoung B2B & CRM Systems',
       year: '2024–2025',
       cover: 'product-why-does-a-design-system-matter-7.jpg',
       duo: ['#1E293B', '#6B7F6B'],
-      tags: ['Design System', 'UI Design', 'System Thinking'],
-      summary: 'For a new CRM, I set three design principles before opening Figma, then a component library on an 8px grid.',
+      tags: ['Design System', 'UI Design', 'Systems Thinking'],
+      summary: 'For a new CRM built by a team of two, I set the design principles and foundations, then built the Figma component library the engineer worked from.',
       blog: {
-        intro: '',
-        sections: [
-          { h: 'Principles Before Screens', p: `The CRM had to carry complex registration workflows without becoming rigid. Before drawing screens, I set three principles for it to follow.` },
-          { h: 'Three Principles', p: `Defined before opening Figma, so the system stayed coherent as it grew:
+        intro: `Design role: Senior Product Designer and the only designer. I set the design principles, drew on Atomic Design to structure the system up to reusable page-level layouts, defined the foundations (type scale, colour palette and 8px grid) and built the Figma component library.
 
-• Clarity Over Decoration: In a high-intensity work environment, every element must serve a purpose. We prioritize data readability over trendy aesthetics.
-• Consistency Breeds Efficiency: Predictable patterns reduce the learning curve. If a "Submit" button looks a certain way in Registration, it must look the same in Reporting.
-• Forgiving Design: Human error is inevitable in manual data entry. Our system must provide clear feedback and "undo" paths to prevent costly mistakes.` },
+Timeline: The Ohyoung CRM project started in March 2024. I began building this system around August–September 2024 and developed it gradually. QA began around December 2024. The company paused the project in early 2025 to prioritise other projects, so the CRM did not launch.
+
+Team: I worked with one engineer, who built the CRM from the library, and we shared the PM work.
+
+Outcome: I built a Figma component library with shared foundations that the engineer used to build the CRM. The CRM reached QA but did not launch, so there are no usage results.`,
+        sections: [
+          { h: 'Why the CRM Needed Shared Patterns', p: `This is the design system behind the Ohyoung CRM (see the case "Designing a CRM Around Different School Workflows"), a new product for language schools whose workflows differed and were largely manual. The CRM was meant to support registration and reporting, where staff enter much of the data by hand.
+
+Interviews showed that staff work in a high-intensity environment and that data-entry mistakes are costly for them. For the new CRM, I defined shared patterns to keep screens consistent from the start.` },
+          { h: 'Three Principles for Data-Heavy Screens', p: `I set three principles to guide my screen and component decisions:
+
+• Readable data: on data-heavy screens, I prioritised clear labels and hierarchy over decoration.
+• Consistent actions: the same action should look and behave the same in every module. If a "Submit" button looks a certain way in Registration, it looks and works the same way in Reporting.
+• Recoverable mistakes: the system should give clear feedback and let staff correct an entry.` },
           { type: 'image', src: 'product-why-does-a-design-system-matter-3.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-4.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-5.jpg' },
-          { h: 'Components Instead of Pages', p: `To support the 10% efficiency target, I used Atomic Design: components instead of page-by-page screens.
+          { h: 'How I Organised the Component Library', p: `I built reusable components to use across the CRM screens. I drew on Atomic Design to organise them, from single elements such as a field, a button or a label up to page-level layouts that could be reused across screens.
 
-• The Atoms: I standardized typography scales, a B2B-optimized color palette (prioritizing high contrast and reduced eye strain), and a strict 8px grid system.
-• The Library: By building a centralized Figma component library, we ensured that developers could reuse code, shortening the time it took to ship new features.` },
+• Foundations: a type scale, a colour palette and an 8px grid, shared by every screen. Readability guided the palette, and I checked its colour contrast with an accessibility checker plugin in Figma.
+• The library: a central Figma component library for the engineer to build the CRM from.` },
           { type: 'image', src: 'product-why-does-a-design-system-matter-7.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-8.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-9.jpg' },
           { type: 'image', src: 'product-why-does-a-design-system-matter-10.jpg' },
+          { h: 'Where It Stopped', p: `The CRM reached QA but was paused before launch. We had set a target of making design-to-engineering iteration at least 10% faster with this shared system; it was not measured.` },
         ],
         quote: null,
       },
