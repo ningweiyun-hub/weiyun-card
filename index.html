@@ -3987,36 +3987,42 @@ const AI_PLANNING_CASE = {
   year: '2026',
   duo: ['#0F172A', '#B8B4D8'],
   tags: ['AI Interaction Design', 'Product Experiment', '0→1 Product'],
-  summary: 'Exploring how AI can turn an ambiguous goal into an actionable plan without taking control away from the user.',
+  summary: '86400 is my own project, started at a hackathon: an AI-assisted app for tracking long-term goals. The design question is how much the AI should plan for someone before they lose control of their own goal.',
   blog: {
-    intro: `Independent product experiment / Work in progress.`,
+    intro: `Design role: My own project, started at a hackathon. I lead the product and the AI interaction design. From the hackathon until now I have done most of the work, around 70%.
+
+Timeline: 2026, ongoing.
+
+Build: The app began as native Swift. An engineer converted it to Flutter with AI, because his machine could not run native iOS Swift.
+
+Status: An iOS app. The build is still on TestFlight, but the backend is off, so the app is not running for testers right now. It is not on the App Store.
+
+Testing so far: I sent builds to testers and iterated on the AI's responses. I have also compared AI-generated content with human-curated content for this kind of planning. There are no metrics yet.`,
     sections: [
-      { h: 'Context', p: `A user describes a long-term goal in their own words. Pace, the AI coach, turns it into a weekly direction, a measurable finish line for that week, and an action they can start today.
+      { h: 'A Goal in the User\'s Own Words', p: `A user describes a long-term goal in their own words. Pace, the AI coach, turns it into a weekly direction, a measurable finish line for that week, and an action they can start today.` },
+      { h: 'My AI Interaction Design Questions', p: `I focused the AI interaction design on six questions:
 
-The current version is an AI-assisted iOS app built with Flutter, now in beta testing on TestFlight.` },
-      { h: 'Design question', p: `Using AI is not the hard part. The design work is deciding where the line sits:
+• what the AI should infer from a free-text goal
+• what the user should confirm
+• how much to generate at once
+• how to reveal complexity step by step
+• how users correct or override what the AI produced
+• how a conversation changes planning compared with filling in a form` },
+      { h: 'The Original App and First AI Prototype', p: `86400 began as a time-awareness app built around the 86,400 seconds in a day. It used pressure: a countdown that intensified through the evening, one Anchor task per day, and a companion pet that paid for an unfinished Anchor at midnight.
 
-• What the AI should infer from a free-text goal
-• What the user should confirm
-• How much to generate at once
-• How to reveal complexity progressively
-• How users correct or override what the AI produced
-• How a conversation changes planning compared with filling in a form` },
-      { h: 'Early approach', p: `86400 began as a time-awareness app built around the 86,400 seconds in a day. It ran on pressure: a countdown that intensified through the evening, one Anchor task per day, and a companion pet that paid for an unfinished Anchor at midnight.
-
-The first AI prototype kept much of the control on the system side. Pace created a weekly direction and one action for today. Onboarding came in two versions: one showed what Pace understood and let the user edit the plan field by field; the other let them adjust it by talking to Pace. Finishing a task meant passing a completion check, adding proof (a photo, a link, a written note, or self-confirmation only when no stronger proof existed), and then an end-of-day check-in before tomorrow's action was created.` },
-      { h: 'What I changed and why', p: `• Pressure as the engine. The product's job is to make starting easier; a heating countdown and a pet at risk work against that. The companion now gives support and feedback, and is never used to shame or threaten.
-• Asking for proof. The AI can help structure the work, but it should not become the authority deciding whether the user succeeded. Users now mark tasks complete or incomplete themselves, with no evidence required.
-• A separate end-of-day check-in. Finishing all main tasks now settles the day and creates the next action; mood, notes and what I learned are optional.
-• One action per day for every goal. It did not fit goals with independent tracks, such as language practice alongside job applications. The rule became: highlight one next action at a time, without forcing every day down to one main task.
-• Two onboarding versions. Editing the plan field by field was retired; guided conversation is now the only way in.` },
-      { h: 'Current interaction direction', p: `• Infer first, ask only when it matters. Pace extracts the outcome, success criteria, current baseline, deadline, milestones, dependencies, available days and time, and constraints from the user's own words. It asks a follow-up only when missing information would change the plan: one question at a time, never more than two, each with up to three quick answers plus Something else.
-• Keep what the user said. Stated KPIs, deadlines and constraints must survive. A current state is never recorded as the goal: IELTS speaking at 5.5 today is a baseline; an IELTS overall score of 8 is the outcome. Dropping a stated detail counts as an AI failure, not a simplification.
-• Reveal in layers. The plan summary shows the outcome, success criteria, deadline, weekly rhythm and near-term direction. Milestones and dependencies sit behind View plan details. Long-term stages are never pushed into Today all at once.
-• Correct through conversation, once. During onboarding, the user tells Pace what it misunderstood or missed. Pace changes only what was asked and returns the same summary format. After onboarding, changes use structured controls (sessions per week, daily time, adding or removing main tasks) instead of reopening the conversation.
-• The user decides what happened. Tasks are marked Complete, Incomplete or Skip for now, with no proof required. After an incomplete or low-capacity day, Pace scales the next action down.` },
-      { h: 'What I am testing next', p: `• How much belongs in the first layer of the plan summary, and how much can wait behind details.
-• The order and wording of Pace's follow-up questions within the same guided flow.
+The first AI prototype kept much of the control on the system side. Pace created a weekly direction and one action for today. Onboarding came in two versions: one showed what Pace understood and let the user edit the plan field by field, the other let them adjust it by talking to Pace. Finishing a task meant passing a completion check and adding proof (a photo, a link, a note, or self-confirmation only when nothing stronger existed), then an end-of-day check-in before tomorrow's action was created.` },
+      { h: 'What I Changed and Why', p: `• I removed the countdown and changed the companion's role. I wanted the product to make starting easier, so I removed the escalating countdown and stopped putting the companion pet at risk. The companion now gives support and feedback, and is never used to shame or threaten.
+• No more proof. The AI can help structure the work, but it should not become the authority on whether the user succeeded. Users now mark tasks complete or incomplete themselves.
+• No separate end-of-day check-in. Finishing all main tasks now settles the day and creates the next action. Mood, notes and reflections are optional.
+• Not one action per day for every goal. That rule did not fit goals with independent tracks, such as language practice alongside job applications. Now one next action is highlighted at a time, without forcing every day down to one main task.
+• I removed field-by-field editing from onboarding. Guided conversation is now the only way in.` },
+      { h: 'How Pace Works Now', p: `• Pace asks follow-up questions only when missing information would change the plan. It extracts the outcome, success criteria, current baseline, deadline, milestones, dependencies, available time and constraints from the user's own words. It asks one question at a time, never more than two, each with up to three quick answers plus Something else.
+• I check whether Pace keeps what the user said. I treat dropped KPIs, deadlines or constraints, and confusion between a baseline and an outcome, as AI failures. IELTS speaking at 5.5 today is a baseline; an IELTS overall score of 8 is the outcome.
+• I put milestones and dependencies behind View plan details. The plan summary shows the outcome, success criteria, deadline, weekly rhythm and near-term direction.
+• I limit conversational correction to onboarding. During onboarding, the user tells Pace what it misunderstood or missed, and Pace changes only that. After onboarding, changes use structured controls (sessions per week, daily time, adding or removing main tasks) instead of reopening the conversation.
+• The user decides what happened. Tasks are marked Complete, Incomplete or Skip for now. After an incomplete or low-capacity day, Pace scales the next action down.` },
+      { h: 'What I Am Testing Next', p: `• How much belongs in the first layer of the plan summary, and how much can wait behind details.
+• The order and wording of Pace's follow-up questions.
 • Whether people move from a confirmed plan to actually starting their first action.
 • How many main tasks a day can hold before one highlighted next action stops being enough. This is still an open decision.` },
     ],
@@ -4115,19 +4121,21 @@ Interviews showed that staff work in a high-intensity environment and that data-
       id: 'workshop-management-system',
       title: 'One Tool to Run My Workshop Business',
       project: 'Workshop Management System',
-      year: '2025',
+      year: '2026',
       cover: 'ai-my-first-ai-project-manage-my-own-busine.jpg',
       duo: ['#0F172A', '#B8B4D8'],
       tags: ['Built with AI', 'Internal Tool', 'Small Business'],
-      summary: 'A working tool for running Cord n Yarn workshops: sessions, clients, budgets and templates in one place.',
-      link: 'https://ningweiyun-hub.github.io/workshop-manager/workshop-manager.html',
-      linkNote: 'Password: linen-clay-spool-amber-94',
+      summary: 'A working tool for running my craft workshops: sessions, venues, clients, budgets and templates.',
       blog: {
-        intro: '',
+        intro: `Role: My own tool. I designed it and built it with AI coding tools.
+
+Year: 2026.
+
+Status: A working single-file web app for my own workshops.`,
         sections: [
-          { h: 'What I wanted to test', p: `Whether one tool could replace the scattered notes, spreadsheets and repeated messages behind my own craft workshops.` },
-          { h: 'What I made', p: `A single-file web app, built with AI coding tools, covering upcoming sessions, preparation tasks, client records, budgets, reusable material lists and email templates. It runs in the browser and keeps data locally, with no backend or install.` },
-          { h: 'What I learned', p: `The hard part of running workshops was not the workshop itself but the operations around it: who is coming, what to prepare, what is still pending. For a one-person business, the simplest setup worked best: one file, data kept in the browser, easy to back up.` },
+          { h: 'What I Wanted to Change', p: `Whether one tool could replace the scattered notes, spreadsheets and repeated messages behind my craft workshops.` },
+          { h: 'What I Made', p: `A single-file web app, built with AI coding tools, covering upcoming sessions, venue management, preparation tasks, client records, budgets, reusable material lists and email templates. The app runs in the browser and keeps data locally, with no backend or install.` },
+          { h: 'Why I Kept It Simple', p: `Alongside running the workshops, I had to track who was coming, what to prepare and what was still pending. Running workshops on my own, I kept the setup simple: one file, with data kept in the browser.` },
         ],
         quote: null,
       },
@@ -4143,11 +4151,15 @@ Interviews showed that staff work in a high-intensity environment and that data-
       summary: 'A speaking-practice tool: pick a theme, draw a random question, and answer before the timer ends.',
       link: 'https://ningweiyun-hub.github.io/small-talk-practice/',
       blog: {
-        intro: '',
+        intro: `Role: My own project. I designed it and built it with AI coding tools.
+
+Year: 2026.
+
+Status: A live web page.`,
         sections: [
-          { h: 'What I wanted to test', p: `A low-pressure way to practise answering in English on the spot, instead of preparing perfect answers in advance.` },
-          { h: 'What I made', p: `A live web page, built with AI coding tools, with 212 questions across seven themes, including job interviews. You pick a theme, draw a question and speak against a timer, with a short answer tip for each theme.` },
-          { h: 'What I learned', p: `A little structure makes spontaneity easier: a random prompt and a clear time limit keep practice small. Different situations also need different settings, so interview questions get 90 seconds and a STAR-method tip, while everyday small talk gets 60.` },
+          { h: 'What I Wanted to Explore', p: `A low-pressure way to practise answering in English on the spot, instead of preparing perfect answers in advance.` },
+          { h: 'What I Made', p: `A live web page with 212 questions across seven themes, including job interviews. You pick a theme, draw a question and answer before the timer ends, with a short answer tip for each theme.` },
+          { h: 'Why I Chose These Settings', p: `I wanted to keep practice manageable with a random prompt and a clear time limit. I gave interview questions 90 seconds and a STAR-method tip, and everyday small talk 60 seconds.` },
         ],
         quote: null,
       },
@@ -4160,14 +4172,18 @@ Interviews showed that staff work in a high-intensity environment and that data-
       cover: 'ai-random-idea-from-life.jpg',
       duo: ['#B8B4D8', '#E07A5F'],
       tags: ['Built with AI', 'Personal Tool', 'Live Prototype'],
-      summary: 'A meal spinner connected to a pantry tracker and recipe list, for faster decisions and less forgotten food.',
+      summary: 'A meal spinner connected to a pantry tracker and a recipe list, made to help me decide faster and forget less food.',
       link: 'https://ningweiyun-hub.github.io/ns-food-spinner/',
       blog: {
-        intro: '',
+        intro: `Role: My own project. I designed it and built it with AI coding tools.
+
+Year: 2026.
+
+Status: A live prototype.`,
         sections: [
-          { h: 'What I wanted to test', p: `Two everyday problems: taking too long to decide what to eat, and forgetting ingredients at home until they went to waste.` },
-          { h: 'What I made', p: `A live prototype, built with AI coding tools, with three connected parts: a meal spinner for quick decisions, a pantry tracker for fridge and cupboard items, and a recipe collection.` },
-          { h: 'What I learned', p: `The spin helps with the decision, but it is only useful when it connects to what is actually in the kitchen. The real question was not “What should I eat?” but “What can I make with what I already have?”` },
+          { h: 'What I Wanted to Explore', p: `I wanted to explore two everyday problems: taking too long to decide what to eat, and forgetting ingredients at home until they went to waste.` },
+          { h: 'What I Made', p: `A live prototype with three connected parts: a meal spinner for quick decisions, a pantry tracker for fridge and cupboard items, and a recipe collection.` },
+          { h: 'Why I Connected the Parts', p: `I wanted to connect meal choices to the ingredients I already had, so I built the meal spinner, pantry tracker and recipe collection as connected parts of the prototype.` },
         ],
         quote: null,
       },
@@ -4176,8 +4192,6 @@ Interviews showed that staff work in a high-intensity environment and that data-
 
   'creative-technologist': [
     {
-      /* Copy below is a DRAFT in Claude's words — the facts are right, the
-         voice is not Weiyun's yet. */
       id: 'harpist-above-the-clouds',
       title: 'Making the Cursor the Instrument',
       project: 'The Harpist Above the Clouds',
@@ -4185,24 +4199,26 @@ Interviews showed that staff work in a high-intensity environment and that data-
       cover: 'creative-harpist-cover.jpg',
       duo: ['#0F172A', '#B8B4D8'],
       tags: ['Generative art', 'Creative coding', 'Sound', 'Interaction'],
-      summary: 'A web page where you play a harp by moving the mouse. Up for higher notes, down for lower ones.',
+      summary: 'I built a web page where you play a harp with the mouse. Moving up or down selects the note; moving sideways plays it.',
       blog: {
-        intro: `There is nothing to click. You move the mouse and the harp plays. Move up and the notes get higher, move down and they drop. An angel plays above a city of clouds, and you can swap her for a crocodile.
+        intro: `Role: My own project. I designed the interaction and the sound, cut out the characters and built the page. The characters themselves are AI-generated.
 
-I made all of it. The interaction, the sound, the cut-out characters, the page.`,
+Year: 2026.
+
+There is nothing to click. Moving the mouse sideways plays a note; its height sets the pitch. An angel plays above a city of clouds, and you can swap her for a crocodile.`,
         sections: [
           { h: 'No Buttons, So the First Second Matters', p: `There is no play button and nothing to aim at. The only control is where your mouse is, and the only answer is sound. If you sit still you hear nothing and the page looks like a picture, so the first second has to make you move.
 
-I kept the rule simple. Height picks the note, moving sideways plays it. Most people work it out by accident in about two seconds, without reading the line that explains it.` },
+I kept the rule simple. Height picks the note, and moving sideways plays it. I wanted people to work it out just by moving, without needing the line that explains it.` },
           { type: 'video', src: 'harpist-demo.mp4', poster: 'creative-harpist-cover.jpg', caption: 'Moving the mouse across the clouds. The harp follows.' },
           { h: 'Getting the Player Out of the Picture', p: `The angel and the crocodile are AI-generated. I cut them out frame by frame so they can float over a background that is not theirs.
 
-The first tries went badly. A character generated inside its own painted scene drags that scene along with it. Sky, pillars, half a tail. I went through four rounds of fixing the edges and each round left something new to fix.
+The first tries went badly. A character generated inside its own painted scene drags that scene along with it: sky, pillars, half a tail. I went through four rounds of fixing the edges, and each round left something new to fix.
 
-The real fix was further back. I asked for the character on its own, full body, plain background, and then it cut out cleanly. The angel worked that way first time. The crocodile only worked once I stopped repairing and asked for a new image.` },
+Then I changed how I requested the source image. I asked for the character on its own, full body, on a plain background, and then it cut out cleanly. The angel worked that way first time. The crocodile only worked once I stopped repairing and asked for a new image.` },
           { h: 'Why I Made It', p: `Nobody asked for this one. I wanted to know if a web page could feel like an instrument instead of a screen, and whether sound and movement on their own could hold someone there.
 
-The notes sit on a fixed scale, so it always sounds nice and never surprises you. Next I want the scale to drift, so someone who stays a while hears something the person who leaves after ten seconds does not.` },
+I kept the notes on a fixed scale. Next I want to explore a drifting scale, so someone who stays a while hears something the person who leaves after ten seconds does not.` },
         ],
         quote: null,
       },
